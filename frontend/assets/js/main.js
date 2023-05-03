@@ -7,6 +7,7 @@ let createdOffer;
 let inCall = false;
 let incomingCallModal = document.getElementById('incomingCallModal');
 let videoChatModal = document.getElementById('videoChatModal');
+let chatDetailsSection = document.getElementById('chat-details-section')
 let localVideo = document.getElementById('localVideo');
 let remoteVideo = document.getElementById('remoteVideo');
 const incomingCallSound = document.getElementById("incomingCallSound");
@@ -23,8 +24,10 @@ document.getElementById("localVideo").volume = 0
 console.log("My Username", username);
 let currentFriend = '';
 let roomId = '1234'; // the ID of the room the user is joining
+let makingOffer = false;
+let ignoreOffer = false;
 
-const socket = io("https://localhost:3000", { query : {token}, rejectUnauthorized: false });
+const socket = io("https://localhost:3000", { query: { token }, rejectUnauthorized: false });
 const configuration = {
     iceServers: [
         { urls: 'stun:stun.stunprotocol.org:3478' },
@@ -137,7 +140,7 @@ function renderFriendList() {
         var listItem = document.createElement('li');
         listItem.className = 'flex items-center mb-4 hover:bg-gray-100 cursor-pointer';
         listItem.onclick = function () {
-          
+
             friendClicked(uname);
         }
         if (!messageStore[friend.username]) {
@@ -171,7 +174,7 @@ function renderFriendList() {
 
 
 socket.emit('join-room', username);
-socket.on('error', (message) =>{
+socket.on('error', (message) => {
     console.log('message', message);
 });
 socket.on('offer', async (offer, receipientInfo) => {
@@ -196,7 +199,7 @@ socket.on('connect_error', (err) => {
     alert(`Socket connection error: ${err.message}`);
     // Display an error message to the user
     // For example, you can use an alert() function or modify the HTML of the page to display an error message
-  });
+});
 
 socket.on('chat-message', (message, roomId) => {
     console.log('received chatMessage');
@@ -250,13 +253,18 @@ socket.on('accept', async (callData) => {
         };
         peerConnection.onnegotiationneeded = async () => {
             console.log("negotiation needed");
+           
             try {
+                makingOffer = true;
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
                 socket.emit('offer', offer, { username, to: callData.username });
                 console.log("Sending offer from my room ", username, " to ", callData.username);
             } catch (error) {
                 console.error('Error creating offer:', error);
+            }
+            finally{
+                makingOffer = false;
             }
 
 
@@ -302,8 +310,12 @@ async function startVideoCall() {
     console.log("Initiated video call request!!")
 }
 
-
-
+function openChatDetails(){
+    if(chatDetailsSection.classList.contains('hidden'))
+        chatDetailsSection.classList.remove('hidden');
+    else
+    chatDetailsSection.classList.add('hidden');
+}
 function startAudioCall() {
     // code to start an audio call
 

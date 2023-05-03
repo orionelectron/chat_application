@@ -9,6 +9,8 @@ const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+let conversations = [];
 
 
 
@@ -35,6 +37,18 @@ const pool = mysql.createPool({
     database: 'matrimonial'
 });
 
+const storage = multer.diskStorage({
+    destination: './uploads/',
+    filename: function (req, file, cb) {
+        console.log("file upload!!");
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+// Initialize upload
+const upload = multer({
+    storage: storage
+}).array('files', 10);
 
 
 // keep track of connected clients
@@ -53,7 +67,7 @@ app.use(session({
 app.engine('html', require('ejs').renderFile);
 
 function requireAuth(req, res, next) {
-    if (req.session.username) {
+    if (req.session.user_id) {
         // If user is authenticated, continue to next middleware or route handler
         next();
     } else {
@@ -118,46 +132,68 @@ app.post('/login', (req, res) => {
         }
 
         if (results.length === 0) {
+            console.log("zero results");
             res.status(400).send('Invalid username or password');
             return;
         }
-        const token = jwt.sign({ username }, 'orion');
+        //console.log("results", results[0].id);
+        const token = jwt.sign({ id: results[0].id }, 'orion');
 
         // Return the token to the client
-        req.session.username = username;
+        req.session.user_id = results[0].id;
         req.session.token = token;
 
-        res.redirect('/chat?username=' + username + '&' + 'token=' + token );
+        res.redirect('https://localhost:3000/chat?user_id=' + results[0].id + '&' + 'token=' + token);
     });
 });
 
 app.get('/chat', requireAuth, (req, res) => {
-    const username = req.query.username;
+    const user_id = req.query.user_id;
     const token = req.query.token;
+    console.log("requested chat");
     let filePath = path.join(__dirname, '../frontend/chat.html')
     res.render(filePath, {
-        username: username,
+        user_id: user_id,
         token: token
+    });
+});
+
+app.post('/upload', (req, res) => {
+    upload(req, res, (err) => {
+        if (err) {
+            // Handle error
+            res.status(400).send('Error uploading file(s).');
+        } else {
+            // Files uploaded successfully
+            res.status(200).send('File(s) uploaded.');
+        }
     });
 });
 
 app.get('/friends', requireAuth, (req, res) => {
     // Get the current user's username from the session
-    const currentUser = req.session.username;
+    console.log(req.body);
+    const currentUser = req.session.user_id;
     console.log("request friends!!")
 
     // TODO: Query the database to get the list of friends for the current user
     // For example, assuming you have a User model in Mongoose:
-    const username = req.session.username;
+    const id = req.session.user_id;
 
-    const sql = 'SELECT * FROM matrimonial.users WHERE username != ?';
-    pool.query(sql, [username], (err, result) => {
+    const sql = 'SELECT * FROM matrimonial.users WHERE id != ?';
+    pool.query(sql, [id], (err, result) => {
         if (err) {
             throw err;
         }
         let redacted = [];
         for (let i = 0; i < result.length; i++) {
-            redacted.push({ username: result[i].username, id: result[i].id });
+            redacted.push({
+                username: result[i].username,
+                id: result[i].id,
+                photo_picture_path: "https://picsum.photos/300/300",
+                last_active: 20,
+                isOnline: false
+            });
         }
 
         console.log(result);
@@ -165,6 +201,11 @@ app.get('/friends', requireAuth, (req, res) => {
         res.send(redacted);
     });
 });
+
+
+
+
+
 
 io.use((socket, next) => {
     const token = socket.handshake.query.token;
@@ -180,7 +221,8 @@ io.use((socket, next) => {
         }
 
         // Authentication succeeded, store the user ID on the socket object
-        socket.username = decoded.username;
+
+        socket.user_id = decoded.user_id
         next();
     });
 });
@@ -188,20 +230,59 @@ io.use((socket, next) => {
 
 // handle incoming socket connections
 io.on('connection', (socket) => {
-    console.log('a user connected');
+    console.log('a user connected', socket.handshake.query);
+    if (!socket.user_id)
+        socket.user_id = socket.handshake.query.user_id;
 
 
 
-    socket.on('join-room', (roomId) => {
-        socket.join(roomId);
-        console.log("got request to join rooom ", roomId);
-        socket.to(roomId).emit('user-connected', roomId);
+    socket.on('join-room', async (user_id_pair) => {
+        let conversationId = create_conversation_id(user_id_pair.from_user, user_id_pair.to_user);
+        socket.join(conversationId);
 
-        socket.on('disconnect', () => {
-            console.log('user_disconnected ', roomId);
-            socket.to(roomId).emit('user-disconnected', roomId);
+        let clients = await io.fetchSockets();
+        for (let i = 0; i < clients.length; i++) {
+            if (clients[0].user_id == user_id_pair.to_user) {
+                clients[0].join(conversationId);
+            }
+        }
+
+        console.log("got request to join rooom ", conversationId);
+        socket.to(conversationId).emit('user-connected', socket.user_id);
+
+        socket.on('disconnect', async (data) => {
+            let clients = await io.fetchSockets();
+            let disconnected = true;
+            for (let i = 0; i < clients.length; i++) {
+                if (clients[0].user_id == socket.user_id) {
+                    disconnected = false;
+                }
+            }
+
+            if (disconnected) {
+                console.log('user_disconnected ', conversationId, data);
+                socket.to(conversationId).emit('user-disconnected', socket.user_id);
+            }
+
         });
+        socket.on('notify-self-status', (data) => {
+            socket.to(conversationId).emit('friend-notify-status', data);
+        })
     });
+
+
+
+    socket.on('request-peer-room-join', async (data) => {
+        console.log('request-peer-room-join ', data);
+        let conversationId = create_conversation_id(data.from, data.to);
+        let clients = await io.fetchSockets();
+        for (let i = 0; i < clients.length; i++) {
+            if (clients[0].user_id == data.to) {
+                clients[0].join(conversationId);
+            }
+        }
+
+    })
 
     socket.on('offer', (offer, callData) => {
         console.log("sent the offer to room", callData.to);
@@ -229,9 +310,11 @@ io.on('connection', (socket) => {
         socket.to(callData.to).emit('candidate', candidate, callData);
 
     });
-    socket.on('chatMessage', (message, roomId) => {
-        console.log('received chatMessage', message);
-        socket.to(roomId).emit('chatMessage', message);
+    socket.on('chat-message', (message) => {
+        let conversationId = create_conversation_id(message.from, message.to);
+
+        console.log('received chatMessage', message, conversationId);
+        socket.to(conversationId).emit('chat-message', message);
 
     });
 });
@@ -241,3 +324,16 @@ const PORT = 3000;
 httpsServer.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+function create_conversation_id(userId, otherUserId) {
+    // Sort the user IDs to ensure consistency in conversation IDs
+    const sortedIds = [userId, otherUserId].sort();
+
+    // Concatenate the sorted IDs with a separator to create a conversation ID
+    const conversationId = sortedIds.join('-');
+
+    // Check if a conversation with this ID already exists
+    return conversationId;
+
+
+}

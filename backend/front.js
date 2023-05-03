@@ -1,39 +1,91 @@
-const express = require('express');
-const app = express();
-const https = require('https');
+const config = {
+    iceServers: [{ urls: "stun:stun.mystunserver.tld" }]
+}
 
-const path = require('path');
-const fs = require('fs');
+let makingOffer = false;
+let ignoreOffer = false;
+
+const signaler = new Signallingchannel();
+const pc = new RTCPeerConnection(config);
+
+const constraints = { audio: true, video: true };
+const selfVideo = document.querySelector("video.selfview");
+const remoteVideo = document.querySelector("video.remoteview");
+
+async function start() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        for (const track of stream.getTracks()) {
+            pc.addTrack(track, stream);
+        }
+        selfVideo.srcObject = stream;
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+pc.ontrack = ({ track, streams }) => {
+    track.onunmute = () => {
+        if (remoteVideo.srcObject) {
+            return;
+        }
+        remoteVideo.srcObject = streams[0];
+    };
+};
 
 
-const httpsPort = 3000;
+
+pc.onnegotiationneeded = async () => {
+    try {
+        makingOffer = true;
+        await pc.setLocalDescription();
+        signaler.send({ description: pc.localDescription });
+    } catch (err) {
+        console.error(err);
+    } finally {
+        makingOffer = false;
+    }
+};
+
+pc.onicecandidate = ({ candidate }) => signaler.send({ candidate });
+pc.oniceconnectionstatechange = () => {
+    if (pc.iceConnectionState === "failed") {
+        pc.restartIce();
+    }
+};
+
+
+signaler.onmessage = async ({ data: { description, candidate } }) => {
+    try {
+        if (description) {
+            const offerCollision =
+                description.type === "offer" &&
+                (makingOffer || pc.signalingState !== "stable");
+
+            ignoreOffer = !polite && offerCollision;
+            if (ignoreOffer) {
+                return;
+            }
+
+            await pc.setRemoteDescription(description);
+            if (description.type === "offer") {
+                await pc.setLocalDescription();
+                signaler.send({ description: pc.localDescription });
+            }
+        } else if (candidate) {
+            try {
+                await pc.addIceCandidate(candidate);
+            } catch (err) {
+                if (!ignoreOffer) {
+                    throw err;
+                }
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+};
 
 
 
-const httpsServer = https.createServer({
-    key: fs.readFileSync('./site_key.key'),
-    cert: fs.readFileSync('./site_cert.crt'),
-
-}, app);
-
-
-
-// keep track of connected clients
-let clients = {};
-
-// serve static files
-
-
-app.get('/', (req, res) => {
-    console.log('got request')
-    res.send(fs.readFileSync('../frontend/index.html'));
-});
-app.use("/assets/js", express.static(path.join(__dirname, '../frontend/assets/js')));
-
-
-
-const PORT =  5500;
-
-httpsServer.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});

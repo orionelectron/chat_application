@@ -1,0 +1,49 @@
+CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  profile_picture_path VARCHAR(255), -- File path of the user's profile picture
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE friend_requests (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  from_user_id INT NOT NULL,
+  to_user_id INT NOT NULL,
+  status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (from_user_id) REFERENCES users(id),
+  FOREIGN KEY (to_user_id) REFERENCES users(id)
+);
+
+
+CREATE TABLE messages (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  from_user_id INT NOT NULL,
+  to_user_id INT NOT NULL,
+  message TEXT, -- Text message content 
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (from_user_id) REFERENCES users(id),
+  FOREIGN KEY (to_user_id) REFERENCES users(id)
+);
+
+CREATE TABLE message_files (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  message_id INT NOT NULL,
+  file_path VARCHAR(255) NOT NULL, -- File path of the file or photo attachment
+  is_photo TINYINT(1) NOT NULL DEFAULT 0, -- Flag indicating whether the attachment is a photo
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (message_id) REFERENCES messages(id)
+);
+
+
+
+CREATE TABLE notifications (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);

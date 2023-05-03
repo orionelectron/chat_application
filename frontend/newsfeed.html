@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Newsfeed Page</title>
+    <!-- Add Font Awesome CSS -->
+    <link rel="stylesheet" href=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css />
+    <!-- Add Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <nav class="bg-gray-300 py-3 px-6 flex justify-between items-center">
+        <div class="flex items-center">
+            <!-- Logo -->
+            <a href="#" class="text-indigo-500 text-2xl font-bold">ORION</a>
+            <!-- Search Bar -->
+            <div class="mx-6 flex items-center">
+                <input type="text"
+                    class="bg-gray-900 text-white px-4 py-2 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    placeholder="Search...">
+                <button class="ml-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex items-center">
+            <i class="fa-solid fa-house fa-2xl mr-10 hover:cursor-pointer" style="color: #005eff;"></i>
+            <!-- Messages -->
+            <a href="#" class="relative text-indigo-400 hover:text-white mr-6  ">
+                <i class="fa-solid fa-2xl  hover:cursor-pointer fa-envelope" style="color: #005eff;"></i>
+                <span
+                    class="absolute top-0 right-0  px-2 py-1 translate-x-2/3 translate-y-1/2 bg-red-500 border border-white rounded-full text-xs text-white">12</span>
+            </a>
+            <!-- Notifications -->
+            <a href="#" class="relative text-indigo-400 hover:text-white ">
+                <i class=" fa-bell fa-solid fa-2xl  hover:cursor-pointer " style="color: #005eff;"></i>
+                <span
+                    class="absolute top-0 right-0  px-2 py-1 translate-x-2/3 translate-y-1/2 bg-red-500 border border-white rounded-full text-xs text-white">12</span>
+            </a>
+            <!-- Profile Image -->
+            <div class="h-14 w-14 rounded-full ml-6 hover:cursor-pointer hover:shadow-lg shadow-cyan-500/50 overflow-hidden">
+                <img src="https://picsum.photos/300/300" alt="Profile Image">
+            </div>
+        </div>
+
+
+        </div>
+    </nav>
+
+
+
+
+
+
+    <!-- Crete post section: feature type text, select attachment, select emoji and post button with right color coding -->
+
+    <!-- Create Post Section -->
+    <div class="flex items-center  justify-center flex-col mt-8">
+        <div class="w-full max-w-md bg-white rounded-md shadow-md p-8">
+            <!-- Text input -->
+            <textarea class="w-full px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none"
+                placeholder="What's on your mind?"></textarea>
+
+            <!-- Attachment input -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <label for="attachment" class="mr-3 cursor-pointer">
+                        <i class="far fa-image fa-lg text-gray-400 hover:text-blue-500"></i>
+                    </label>
+                    <input type="file" id="attachment" class="hidden">
+                    <span class="text-gray-500">Add photo or video</span>
+                </div>
+                <!-- Emoji selector -->
+                <div class="relative">
+                    <button type="button"
+                        class="flex items-center focus:outline-none text-gray-400 hover:text-blue-500">
+                        <i class="far fa-smile fa-lg"></i>
+                    </button>
+                    <div
+                        class="absolute w-48 mt-2 -ml-20 bg-white border border-gray-300 rounded-lg shadow-lg z-10 hidden">
+                        <div class="flex flex-wrap p-2">
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-smile fa-lg"></i>
+                            </button>
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-laugh-squint fa-lg"></i>
+                            </button>
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-grin-alt fa-lg"></i>
+                            </button>
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-grin-tongue fa-lg"></i>
+                            </button>
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-grin-beam fa-lg"></i>
+                            </button>
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-grin-beam-sweat fa-lg"></i>
+                            </button>
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-kiss-wink-heart fa-lg"></i>
+                            </button>
+                            <button type="button"
+                                class="focus:outline-none hover:text-blue-500 rounded-full text-lg mx-1 my-1">
+                                <i class="far fa-surprise fa-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Post button -->
+            <button class="w-full bg-purple-700 text-white py-2 rounded-lg hover:bg-purple-600 focus:outline-none">
+                Post
+            </button>
+        </div>
+    </div>
+
+
+
+
+
+
+    <div class="flex h-full flex-row gap-6 my-8">
+        <div class="container flex basis-1/4 flex-col px-4 ">
+
+
+        </div>
+        <div class="container basis-2/4 items-end  flex flex-col px-1 ">
+            <!-- Newsfeed -->
+            <div class=" bg-white rounded-md shadow-md mt-5">
+                <!-- Top content -->
+                <div class="px-6 py-4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-400"></div>
+                        <div class="ml-3 font-medium">Username</div>
+                        <div class="ml-auto text-sm text-gray-500">Posted x hour ago</div>
+                    </div>
+                </div>
+
+                <!-- Middle content -->
+                <div>
+                    <!-- Photo -->
+                    <img src="https://picsum.photos/300/300" alt="Random photo" class="w-full h-auto">
+                    <!-- Caption -->
+                    <div class="px-6 py-4">
+
+                        <p class="text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tristique
+                            lorem vel eros sollicitudin tincidunt.</p>
+                    </div>
+                </div>
+
+                <!-- below content-->
+                <div class="px-6 py-2 flex flex-col items-center justify-between border-t border-gray-300">
+                    <div class="flex items-center justify-between space-x-4 w-full">
+                        <!-- Display the number of likes dynamically -->
+                        <div class="text-gray-500">10</div>
+                        <!-- Display the number of comments dynamically -->
+                        <div class="text-gray-500">20 </div>
+                        <!-- Display the number of shares dynamically -->
+                        <div class="text-gray-500">30 </div>
+                    </div>
+                    <div class="flex items-center justify-between  space-x-4 w-full">
+                        <!-- Make these icons a bit bigger and stretch them -->
+                        <button class="text-gray-500 hover:text-blue-500 focus:outline-none"><i
+                                class="far fa-thumbs-up fa-lg"></i></button>
+                        <button class="text-gray-500 hover:text-blue-500 focus:outline-none"><i
+                                class="far fa-comment fa-lg"></i></button>
+                        <button class="text-gray-500 hover:text-blue-500 focus:outline-none"><i
+                                class="far fa-share-square fa-lg"></i></button>
+                    </div>
+                </div>
+
+            </div>
+            <div class=" mx-auto bg-white rounded-md shadow-md mt-5">
+                <!-- Top content -->
+                <div class="px-6 py-4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-400"></div>
+                        <div class="ml-3 font-medium">Username</div>
+                        <div class="ml-auto text-sm text-gray-500">Posted 10 hours ago</div>
+                    </div>
+                </div>
+
+                <!-- Middle content -->
+                <div>
+                    <!-- Photo -->
+                    <img src="https://picsum.photos/300/300" alt="Random photo" class="w-full h-auto">
+                    <!-- Caption -->
+                    <div class="px-6 py-4">
+
+                        <p class="text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tristique
+                            lorem vel eros sollicitudin tincidunt.</p>
+                    </div>
+                </div>
+
+                <!-- below content-->
+                <div class="px-6 py-2 flex flex-col items-center justify-between border-t border-gray-300">
+                    <div class="flex items-center justify-between space-x-4 w-full">
+                        <!-- Display the number of likes dynamically -->
+                        <div class="text-gray-500">10</div>
+                        <!-- Display the number of comments dynamically -->
+                        <div class="text-gray-500">20 </div>
+                        <!-- Display the number of shares dynamically -->
+                        <div class="text-gray-500">30 </div>
+                    </div>
+                    <div class="flex items-center justify-between  space-x-4 w-full">
+                        <!-- Make these icons a bit bigger and stretch them -->
+                        <button class="text-gray-500 hover:text-blue-500 focus:outline-none"><i
+                                class="far fa-thumbs-up fa-lg"></i></button>
+                        <button class="text-gray-500 hover:text-blue-500 focus:outline-none"><i
+                                class="far fa-comment fa-lg"></i></button>
+                        <button class="text-gray-500 hover:text-blue-500 focus:outline-none"><i
+                                class="far fa-share-square fa-lg"></i></button>
+                    </div>
+                </div>
+
+            </div>
+
+
+
+        </div>
+        <!-- Friend List -->
+        <div class="sticky top-0 ml-0 friendlist-section  overflow-auto justify-start basis-1/4 p-5 flex flex-col gap-3 shadow-md">
+            <div class="font-bold"> Friend List </div>
+            <div
+                class="friend-item flex hover:bg-gray-300 hover:cursor-pointer active:bg-violet-700 rounded-md flex-row">
+                <div class="user-photo-round-small relative w-16 h-16 mr-4">
+                    <img class="rounded-full border border-gray-100 shadow-sm" src="https://picsum.photos/300/300" />
+                    <div
+                        class="absolute top-0 right-0 h-3 w-3 my-1 border-2 border-white rounded-full bg-green-400 z-2">
+                    </div>
+                </div>
+                <div class="user-name-last-message flex flex-col">
+                    <p class="username font-bold text-lg">
+                        orion electron
+                    </p>
+                    
+                </div>
+            </div>
+            <div
+                class="friend-item flex hover:bg-gray-300 hover:cursor-pointer active:bg-violet-700 rounded-md flex-row">
+                <div class="user-photo-round-small relative w-16 h-16 mr-4">
+                    <img class="rounded-full border border-gray-100 shadow-sm" src="https://picsum.photos/300/300" />
+                    <div
+                        class="absolute top-0 right-0 h-3 w-3 my-1 border-2 border-white rounded-full bg-green-400 z-2">
+                    </div>
+                </div>
+                <div class="user-name-last-message flex flex-col">
+                    <p class="username font-bold text-lg">
+                        Pawan Kandel
+                    </p>
+                   
+                </div>
+            </div>
+            <div
+                class="friend-item flex hover:bg-gray-300 hover:cursor-pointer active:bg-violet-700 rounded-md flex-row">
+                <div class="user-photo-round-small relative w-16 h-16 mr-4">
+                    <img class="rounded-full border border-gray-100 shadow-sm" src="https://picsum.photos/300/300" />
+                    <div
+                        class="absolute top-0 right-0 h-3 w-3 my-1 border-2 border-white rounded-full bg-green-400 z-2">
+                    </div>
+                </div>
+                <div class="user-name-last-message flex flex-col">
+                    <p class="username font-bold text-lg">
+                        pawanix electronica
+                    </p>
+                    
+                </div>
+            </div>
+
+
+
+
+
+
+        </div>
+
+
+    </div>
