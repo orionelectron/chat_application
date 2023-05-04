@@ -5,8 +5,10 @@ let friendlist_section = document.getElementById("friendlist-section")
 let current_selected_friend = document.getElementById('current-selected-friend');
 let user_message_input = document.getElementById('user_message_input');
 let message_container = document.getElementById('messages');
+let file_chooser = document.getElementById('file-chooser');
+let photo_message_modal = document.getElementById('photo-message-modal');
 
-let attachments_list = [];
+let attachment_list_items = [];
 let messageStore = {};
 let unseen_message = {};
 let messages = [];
@@ -179,17 +181,24 @@ function reset_typing_animation() {
 
 function send_message(value = "") {
 
+
     let message_data = {};
     if (value) {
-        message_data = { message: value, from: user_id, to: current_friend.id }
+        message_data = { message: value, from: user_id, to: current_friend.id, files: attachment_list_items }
     }
     else {
-        message_data = { message: user_message_input.value, from: user_id, to: current_friend.id }
+        message_data = { message: user_message_input.value, from: user_id, to: current_friend.id, files: attachment_list_items }
         render_message(message_data);
     }
-    if (message_data.message != "Typing")
+    if (message_data.message != "Typing") {
         set_message_store(message_data, current_friend.id);
-    console.log("message store aftr send message", messageStore);
+        attachment_list_items = [];
+        clear_attachment_view();
+        close_attachment_view();
+
+        console.log("message store aftr send message", messageStore);
+    }
+
 
 
     socket.emit("chat-message", message_data);
@@ -313,16 +322,102 @@ function render_typing_animation() {
 
 }
 
+function get_rendered_photos_or_files(files) {
+    let final_message_template = "";
+    let photo_template = ` <div onclick="photo_clicked('{filename}')" class="bg-gray-200 w-60 h-60 flex items-center justify-center">
+    <img class="object-contain rounded-md h-full w-full" src="{photo}" alt="Image 1">
+  </div>`;
+    let file_template = `<div class="bg-green-300" onclick="file_clicked('{filename}')" class="message_file  flex p-1 items-center justify-center w-60   text-white font-bold  text-clip overflow-hidden ... ">
+    <i class="fa-solid fa-xl pr-1 fa-paperclip  "
+                             style="color: #005eff;"></i>
+                             <div class="rounded-md text-white"> {filename} </div>
+</div>`;
+    files.forEach(({ file_name, file_type, file_data }) => {
+        if (file_type.startsWith('image/')) {
+
+            let img_src = `data:${file_type};base64,${file_data}`;
+            let final_template = photo_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "photo") {
+                    return img_src;
+                }
+                else if (key === "filename") {
+                    return file_name;
+                }
+                else if (key == 'photo_message_object') {
+                    return { file_name, file_type, file_data };
+                }
+                else {
+
+                }
+
+
+
+            });
+            final_message_template = final_message_template + final_template;
+
+
+        }
+        else {
+            let final_template = file_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "filename") {
+                    return file_name;
+                }
+                else {
+                    return { file_name, file_type, file_data }
+                }
+            });
+            final_message_template = final_message_template + final_template;
+        }
+    });
+    return final_message_template;
+
+}
+
+function view_photo_message_modal() {
+    photo_message_modal.classList.remove('hidden');
+
+}
+function close_photo_message_modal() {
+    photo_message_modal.classList.add('hidden');
+}
+
+function get_file_from_message_store(filename) {
+    let message_file = null;
+    messageStore[current_friend.id].forEach((message) => {
+        message.files.forEach((file) => {
+            if (file.file_name == filename) {
+                message_file = file;
+            }
+        });
+    });
+    return message_file
+}
+function photo_clicked(filename) {
+    console.log("photo clicked ", filename);
+    view_photo_message_modal();
+    let file = get_file_from_message_store(filename);
+    let img_src = `data:${file.file_type};base64,${file.file_data}`;
+    document.getElementById("photo_message").src = img_src;
+}
+function file_clicked(filename) {
+    console.log("file clicked ", filename)
+}
+
 function render_message(message) {
     message_template = `
-    <div class="flex flex-col {orientation}">
+    <div class="flex flex-col gap-2 {orientation}">
     <div class="flex gap-2">
-        <img class="rounded-full w-8 h-8 border border-gray-100 shadow-sm"
+        <img class="rounded-full object-cover w-8 h-8 border border-gray-100 shadow-sm"
             src="https://picsum.photos/300/300" />
         <p class="{message_color} text-white rounded-full p-2 font-semibold">
             {message}
         </p>
     </div>
+    <div class="files-images-for-message {files_images_set_class}  gap-4  rounded-md overflow-auto {message_color}" >
+    {files_images_for_message}</div>
+    
 
     <p class="text-gray-500 ml-10"> {message_date}</p>
 </div>
@@ -342,11 +437,39 @@ function render_message(message) {
             }
             return 'bg-sky-500'
         }
+        if (key == 'files_images_for_message') {
+
+            return get_rendered_photos_or_files(message.files);
+
+
+        }
+        if (key == 'files_images_set_class') {
+            if (message.files.length > 0) {
+                console.log("grid grid-cols-1 p-2");
+                return "grid grid-cols-1 p-2"
+                
+            }
+
+            return ""
+        }
         else if (key == "message") {
-            return message.message;
+            return message.message || "";
         }
         else {
-            return new Date().toLocaleDateString("en-US")
+            let now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1; // Month is zero-indexed, so add 1
+            const day = now.getDate();
+
+
+            // Format date and time as a string
+            const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
+
+            // Display date and time
+            console.log(dateTimeString);
+            return dateTimeString;
         }
 
 
@@ -422,8 +545,11 @@ function select_friend_heading_render(friend_id) {
 }
 
 function close_attachment_view() {
+
     if (!attachment_view.classList.contains('hidden'))
         attachment_view.classList.add('hidden');
+
+
 }
 
 function fetch_messages(userId) {
@@ -483,15 +609,136 @@ async function fetch_friends(userId) {
         });
 
 }
+
+file_chooser.addEventListener('change', (event) => {
+    const files = Array.from(event.target.files);
+    /*
+    let file_names = files.map((file) => {
+        const stripped_filename = file.name.split('.').slice(0, -1).join('.');;
+        const prefix = [user_id, current_friend.id].sort().join('-');
+        return prefix + stripped_filename;
+    })
+    */
+
+
+    const promises = files.map((file) => {
+        //let stripped_filename = file.name.split('.').slice(0, -1).join('.');
+        const prefix = [user_id, current_friend.id].sort().join('-');
+        let stripped_filename = prefix + file.name;
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const fileData = reader.result.split(',')[1];
+                resolve({ file_name: stripped_filename, file_type: file.type, file_data: fileData });
+            };
+
+            reader.readAsDataURL(file);
+        });
+    });
+
+    Promise.all(promises).then((files) => {
+        //socket.emit('sendFiles', { files });
+        files.forEach((file) => {
+            attachment_list_items.push(file);
+        });
+
+        console.log("Attachment list items ", attachment_list_items);
+        render_attachment_view();
+    });
+
+});
+
+function clear_attachment_view() {
+    let attachment_view_items = document.getElementsByClassName("attachment-view-item");
+    console.log("attachment_view_items ", attachment_view_items);
+    if (attachment_view_items.length <= 0) {
+        return;
+    }
+    for (let i = 0; i < attachment_view_items.length; i++) {
+        attachment_view_items[i].remove();
+    }
+
+}
+
+function render_attachment_view() {
+    clear_attachment_view();
+    let file_template = `<div
+    class=" attachment-view-item relative p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
+    <i class="fa-solid fa-file fa-xl hover:cursor-pointer" style="color: #025cf7;"></i>
+    <p class="font-semibold"> {filename}</p>
+    <div onclick='remove_from_attachment_list("{filename}")' class=" attachment-view-item-close absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
+    </div>
+</div>`;
+    let photo_template = `<div
+class="attachment-view-item relative  p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
+
+<div class="font-semibold"> <img src="{photo}"> </img></div>
+<div onclick='remove_from_attachment_list("{filename}")' class="attachment-view-item-close absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
+</div>
+</div>`;
+
+    attachment_list_items.forEach(({ file_name, file_type, file_data }) => {
+        if (file_type.startsWith('image/')) {
+
+            let img_src = `data:${file_type};base64,${file_data}`;
+            let final_template = photo_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "photo") {
+                    return img_src;
+                }
+                else if (key === "filename") {
+                    return file_name;
+                }
+
+
+
+            });
+            attachment_view.innerHTML = attachment_view.innerHTML + final_template;
+
+
+        }
+        else {
+            let final_template = file_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "filename") {
+                    return file_name;
+                }
+            });
+            attachment_view.innerHTML = attachment_view.innerHTML + final_template;
+        }
+    });
+
+}
+
+function remove_from_attachment_list(input_file_name) {
+    console.log("input file name for removal ", input_file_name);
+    attachment_list_items = attachment_list_items.filter((attachment_list_item) => {
+        console.log("attachment_list_item ", attachment_list_item.file_name, input_file_name);
+        if (input_file_name == attachment_list_item.file_name)
+            return false;
+        return true;
+    });
+    console.log("filtered attachment list items ", attachment_list_items);
+    clear_attachment_view();
+    render_attachment_view();
+
+}
+
 function open_attachment_view() {
     if (attachment_view.classList.contains('hidden'))
         attachment_view.classList.remove('hidden');
 
+    file_chooser.click();
+
 }
 
 function open_chat_details() {
-    if (chat_details_section.classList.contains('hidden'))
+    if (chat_details_section.classList.contains('hidden')) {
         chat_details_section.classList.remove('hidden');
+        document.getElementById('chat-details-name').innerHTML = current_friend.username;
+    }
+
     else
         chat_details_section.classList.add('hidden');
 }

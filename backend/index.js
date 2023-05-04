@@ -25,6 +25,7 @@ const httpsServer = https.createServer({
 
 }, app);
 const io = new Server(httpsServer, {
+    maxHttpBufferSize: 1e8,
     cors: {
         origin: "*"
     }

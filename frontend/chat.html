@@ -166,37 +166,19 @@
 
             </div>
             <div class="message-section flex flex-col basis-5/6">
-                <div id="messages" class=" overflow-auto  scroll-smooth rounded-md w-full basis-5/6 bg-gray-200 mb-4">
+                <div id="messages"
+                    class=" overflow-y-auto h-500 flex flex-col gap-1 scroll-smooth rounded-md w-full basis-5/6 bg-gray-200 mb-4">
 
 
 
 
                 </div>
-                <div id="attachment-view" class=" gap-2 mb-2 relative hidden basis-2/6 rounded-md overflow-y-scroll">
+                <div id="attachment-view"
+                    class=" flex flex-row gap-2 mb-2 relative hidden basis-2/6 rounded-md overflow-y-scroll">
                     <div id="close_attachment_view" onclick="close_attachment_view()"
                         class="absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
                     </div>
-                    <div
-                        class="relative p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
-                        <i class="fa-solid fa-file fa-xl hover:cursor-pointer" style="color: #025cf7;"></i>
-                        <p class="font-semibold"> file 1</p>
-                        <div class="absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
-                        </div>
-                    </div>
-                    <div
-                        class="relative p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
-                        <img class="rounded-md w-full h-full border border-gray-100 shadow-sm"
-                            src="https://picsum.photos/300/300" />
-                        <div class="absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
-                        </div>
-                    </div>
-                    <div
-                        class="relative p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
-                        <img class="rounded-md w-full h-full border border-gray-100 shadow-sm"
-                            src="https://picsum.photos/300/300" />
-                        <div class="absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
-                        </div>
-                    </div>
+
 
 
 
@@ -209,6 +191,7 @@
                 </div>
                 <div class="message-input items-end pb-4 justify-end mb-4 w-full basis-1/6  gap-6 flex flex-row ">
                     <div class="attachment-area basis-1/6">
+                        <input id="file-chooser" type="file" class="hidden"> </input>
                         <i class="fa-solid fa-xl pr-1 fa-paperclip  hover:cursor-pointer"
                             onclick="open_attachment_view()" style="color: #005eff;"></i>
                         <i class="fa-solid fa-xl pr-2 fa-image  hover:cursor-pointer" onclick="open_attachment_view()"
@@ -235,7 +218,7 @@
                 </div>
 
                 <div>
-                    <p class="font-bold"> Pawan Kandel </p>
+                    <p id="chat-details-name" class=" font-bold"> Pawan Kandel </p>
                     <p> Active 4 h ago</p>
                 </div>
 
@@ -430,6 +413,18 @@
                     <button class="bg-red-500 text-white py-2 px-4 rounded-lg" onclick="endCall()">End
                         Call</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div id="photo-message-modal" class=" fixed z-10 inset-0 overflow-y-auto hidden bg-gray-900">
+        <div class="flex flex-col items-center justify-center min-h-screen">
+            <div class=" bg-white p-6 rounded-lg shadow-xl">
+                <img class="object-contain rounded-md h-full w-full" id="photo_message" src="" />
+
+            </div>
+            <div class="flex justify-end mt-4">
+                <button class="bg-red-500 text-white py-2 px-4 rounded-lg"
+                    onclick="close_photo_message_modal()">Close</button>
             </div>
         </div>
     </div>
