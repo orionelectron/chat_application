@@ -155,9 +155,9 @@
                     </div>
                 </div>
                 <div class="chat-icons w-30 ">
-                    <i class="fa-solid fa-xl fa-phone mr-4 hover:cursor-pointer" onclick="startAudioCall()"
+                    <i class="fa-solid fa-xl fa-phone mr-4 hover:cursor-pointer" onclick="start_audio_call()"
                         style="color: #095cec;"></i>
-                    <i class="fa-solid fa-video fa-xl mr-4 hover:cursor-pointer" onclick="startVideoCall()"
+                    <i class="fa-solid fa-video fa-xl mr-4 hover:cursor-pointer" onclick="start_video_call()"
                         style="color: #095cec;"></i>
                     <i class="fa-solid fa-circle-exclamation fa-xl hover:cursor-pointer" onclick="open_chat_details()"
                         style="color: #025cf7;"></i>
@@ -380,12 +380,12 @@
     <div id="incomingCallModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
         <div class="flex items-center justify-center min-h-screen">
             <div class="bg-white p-6 rounded-lg shadow-xl">
-                <h2 class="text-lg font-semibold mb-4">Incoming Call</h2>
+                <h2 id="incoming_call_initiator" class="text-lg font-semibold mb-4">Incoming Call</h2>
                 <p class="mb-4">Do you want to answer the call?</p>
                 <div class="flex justify-end">
                     <button class="bg-red-500 text-white py-2 px-4 rounded-lg mr-4"
-                        onclick="rejectCall()">Reject</button>
-                    <button class="bg-green-500 text-white py-2 px-4 rounded-lg" onclick="answerCall()">Answer</button>
+                        onclick="reject_video_call()">Reject</button>
+                    <button class="bg-green-500 text-white py-2 px-4 rounded-lg" onclick="accept_video_call()">Answer</button>
                 </div>
                 <audio autoplay loop muted id="incomingCallSound" src="./assets/sound/incoming_call_sound.mp3">
                     <source src="./assets/sound/incoming_call_sound.mp3" type="audio/mp3">
@@ -410,7 +410,7 @@
                     </div>
                 </div>
                 <div class="flex justify-end mt-4">
-                    <button class="bg-red-500 text-white py-2 px-4 rounded-lg" onclick="endCall()">End
+                    <button class="bg-red-500 text-white py-2 px-4 rounded-lg" onclick="end_video_call()">End
                         Call</button>
                 </div>
             </div>
@@ -430,6 +430,9 @@
     </div>
 
     <script src="./assets/js/text_chat.js">
+
+    </script>
+    <script type="text/javascript" src="./assets/js/video_chat.js">
 
     </script>
 

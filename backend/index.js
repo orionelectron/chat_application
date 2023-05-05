@@ -285,30 +285,56 @@ io.on('connection', (socket) => {
 
     })
 
-    socket.on('offer', (offer, callData) => {
-        console.log("sent the offer to room", callData.to);
-        socket.to(callData.to).emit('offer', offer, callData);
+    socket.on('offer', (callData) => {
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('offer', callData);
+        console.log("sent the offer to room", conversationId);
     });
 
-    socket.on('answer', (answer, callData) => {
-        console.log("sent the answer to room", callData.to);
-        socket.to(callData.to).emit('answer', answer, callData);
+    socket.on('answer', (callData) => {
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('answer', callData);
+        console.log("sent the answer to room", conversationId);
+
 
     });
 
     socket.on('call', (callData) => {
-        console.log("Incoming call to room ", callData.to);
-        socket.to(callData.to).emit('call', callData);
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('call', callData);
+        console.log("sent the call request to room", conversationId);
+
+
     })
 
     socket.on('accept', (callData) => {
-        console.log("Call accepted for room ", callData.to);
-        socket.to(callData.to).emit('accept', callData);
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('accept', callData);
+        console.log("sent the call accept notification to room", conversationId);
+
     })
 
-    socket.on('candidate', (candidate, callData) => {
-        console.log("sent the candidate to room", callData.to);
-        socket.to(callData.to).emit('candidate', candidate, callData);
+    socket.on('busy', (callData) => {
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('busy', callData);
+        console.log("sent the user busy notification to room", conversationId);
+    })
+
+    socket.on('end', (callData) => {
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('end', callData);
+        console.log("sent the user call ended notification to room", conversationId);
+    })
+    socket.on('reject', (callData) => {
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('reject', callData);
+        console.log("sent the call rejected notification to room", conversationId);
+    })
+    socket.on('candidate', (callData) => {
+
+        let conversationId = create_conversation_id(callData.from, callData.to);
+        socket.to(conversationId).emit('candidate', callData);
+        console.log("sent the candidate to room", conversationId);
 
     });
     socket.on('chat-message', (message) => {
