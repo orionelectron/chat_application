@@ -20,8 +20,8 @@ const httpsPort = 3000;
 const httpServer = http.createServer(app);
 
 const httpsServer = https.createServer({
-    key: fs.readFileSync('./server.key'),
-    cert: fs.readFileSync('./server.cert'),
+    key: fs.readFileSync('./rootCA.key'),
+    cert: fs.readFileSync('./rootCA.crt'),
 
 }, app);
 const io = new Server(httpsServer, {
