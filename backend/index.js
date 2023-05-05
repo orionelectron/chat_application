@@ -1,5 +1,5 @@
 const express = require('express');
-const app = express();
+
 const https = require('https');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -10,6 +10,9 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+var cors = require('cors')
+const app = express();
+app.use(cors())
 let conversations = [];
 
 
@@ -20,8 +23,8 @@ const httpsPort = 3000;
 const httpServer = http.createServer(app);
 
 const httpsServer = https.createServer({
-    key: fs.readFileSync('./rootCA.key'),
-    cert: fs.readFileSync('./rootCA.crt'),
+    key: fs.readFileSync('./tls.key'),
+    cert: fs.readFileSync('./tls.crt'),
 
 }, app);
 const io = new Server(httpsServer, {
@@ -144,7 +147,7 @@ app.post('/login', (req, res) => {
         req.session.user_id = results[0].id;
         req.session.token = token;
 
-        res.redirect('https://localhost:3000/chat?user_id=' + results[0].id + '&' + 'token=' + token);
+        res.redirect('/chat?user_id=' + results[0].id + '&' + 'token=' + token);
     });
 });
 

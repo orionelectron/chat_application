@@ -19,7 +19,7 @@ const token = document.getElementById('token').value || '1234';
 let friends_list = [];
 let friend_typing_count = 0;
 
-const socket = io("https://localhost:3000", { query: { token, user_id }, rejectUnauthorized: false });
+const socket = io("https://192.168.1.187:3000", { query: { token, user_id }, rejectUnauthorized: false });
 
 socket.on('user-connected', (friend_id) => {
     console.log("user connected!!")
@@ -568,7 +568,7 @@ function fetch_messages(userId) {
         body: JSON.stringify(data)
     };
 
-    fetch('https://localhost:3000/messages', options)
+    fetch('https://192.168.1.187:3000/messages', options)
         .then(response => response.json())
         .then(data => {
             // Process the data
@@ -594,7 +594,7 @@ async function fetch_friends(userId) {
         body: JSON.stringify(data)
     };
 
-    fetch('https://localhost:3000/friends?user_id=' + user_id,)
+    fetch('https://192.168.1.187:3000/friends?user_id=' + user_id,)
         .then(response => response.json())
         .then(data => {
             // Process the data

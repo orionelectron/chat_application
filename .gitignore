@@ -1,1 +1,7 @@
 /backend/node_modules
+/backend/openssl.cnf
+/backend/rootCA.key
+/backend/rootCA.srl
+/backend/tls.crt
+/backend/tls.key
+/backend/tls.csr
