@@ -2,6 +2,7 @@
 /backend/openssl.cnf
 /backend/rootCA.key
 /backend/rootCA.srl
+/backend/rootCA.pem
 /backend/tls.crt
 /backend/tls.key
 /backend/tls.csr

@@ -8,7 +8,7 @@ let polite = true;
 let incomingCallModal = document.getElementById('incomingCallModal');
 let videoChatModal = document.getElementById('videoChatModal');
 let incomingCallInitiator = document.getElementById('incoming_call_initiator');
-
+let callEndedModal = document.getElementById('call_ended_modal');
 let localVideo = document.getElementById('localVideo');
 let remoteVideo = document.getElementById('remoteVideo');
 
@@ -61,6 +61,7 @@ peerConnection.ontrack = ({ track, streams }) => {
         }
 
         remoteVideo.srcObject = streams[0];
+        remoteStream = streams[0];
     };
 };
 
@@ -94,6 +95,8 @@ socket.on("busy", async (callData) => {
 })
 socket.on("end", async (callData) => {
     console.log("recieved a call ended notification ", callData);
+    close_video_chat_window();
+    display_call_ended_modal();
 })
 socket.on("offer", async (callData) => {
     console.log("recieved a offer packet ", callData);
@@ -112,7 +115,17 @@ socket.on("candidate", async (callData) => {
     }
 })
 
+function reset_video_call_elements() {
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+}
 
+function display_call_ended_modal() {
+    callEndedModal.classList.remove('hidden');
+}
+function close_call_ended_modal() {
+    callEndedModal.classList.add('hidden');
+}
 async function ask_for_media_permissions() {
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     try {
@@ -131,8 +144,17 @@ function close_local_stream(stream) {
         track.stop();
     });
 }
+function close_remote_stream(stream) {
+    stream.getTracks().forEach(function (track) {
+        track.stop();
+    });
+}
 function close_video_chat_window() {
-    videoChatModal.classList.add('hidden')
+    reset_video_call_elements();
+    close_local_stream(localStream);
+    close_remote_stream(remoteStream);
+    videoChatModal.classList.add('hidden');
+
 }
 function display_video_chat_window() {
     videoChatModal.classList.remove('hidden');
@@ -212,6 +234,7 @@ function end_video_call() {
     isOnCall = false;
     peerConnection.removeTrack(localTrack);
     close_local_stream(localStream);
+    close_remote_stream(remoteStream);
 }
 function start_video_call() {
     socket.emit("call", { from: user_id, to: current_friend.id, message: "call" });

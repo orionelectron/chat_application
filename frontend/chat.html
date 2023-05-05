@@ -385,7 +385,8 @@
                 <div class="flex justify-end">
                     <button class="bg-red-500 text-white py-2 px-4 rounded-lg mr-4"
                         onclick="reject_video_call()">Reject</button>
-                    <button class="bg-green-500 text-white py-2 px-4 rounded-lg" onclick="accept_video_call()">Answer</button>
+                    <button class="bg-green-500 text-white py-2 px-4 rounded-lg"
+                        onclick="accept_video_call()">Answer</button>
                 </div>
                 <audio autoplay loop muted id="incomingCallSound" src="./assets/sound/incoming_call_sound.mp3">
                     <source src="./assets/sound/incoming_call_sound.mp3" type="audio/mp3">
@@ -426,6 +427,21 @@
                 <button class="bg-red-500 text-white py-2 px-4 rounded-lg"
                     onclick="close_photo_message_modal()">Close</button>
             </div>
+        </div>
+    </div>
+   
+    <div id="call_ended_modal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="bg-white p-6 rounded-lg shadow-xl">
+                <h2 id="incoming_call_initiator" class="text-lg font-semibold mb-4">Call ended by friend</h2>
+                <div class="flex justify-end">
+                    <button class="bg-red-500 text-white py-2 px-4 rounded-lg mr-4"
+                        onclick="close_call_ended_modal()">Got it!</button>
+
+                </div>
+
+            </div>
+
         </div>
     </div>
 
