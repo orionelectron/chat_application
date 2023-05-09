@@ -46,6 +46,28 @@
                     type="email" name="email" id="email" required>
             </div>
             <div class="mt-4">
+                <label class="block font-bold mb-2" for="gender">
+                    Gender
+                </label>
+                <select
+                    class="w-full bg-gray-100 border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    id="gender" name="gender" required>
+                    <option value="" selected disabled>Select your gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="mt-4">
+                <label class="block font-bold mb-2" for="birthdate">
+                    Birthdate
+                </label>
+                <input
+                    class="w-full bg-gray-100 border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    id="birthdate" name="birthdate" type="date" required />
+            </div>
+
+            <div class="mt-4">
                 <label class="block text-gray-700 font-bold mb-2" for="password">Password</label>
                 <input placeholder="password"
                     class="bg-gray-100 border-2 border-gray-300 rounded-md py-2 px-4 w-full focus:outline-none focus:bg-white focus:border-indigo-500"
@@ -64,7 +86,8 @@
             </div>
         </form>
         <div class="mt-8 text-center">
-            <p class="text-gray-600">Already have an account? <a class="text-indigo-500 font-bold" href="#">Login</a>
+            <p class="text-gray-600">Already have an account? <a class="text-indigo-500 font-bold"
+                    href="/login">Login</a>
             </p>
         </div>
     </div>

@@ -27,14 +27,15 @@
     </header>
     <div class="max-w-md mx-auto my-24 px-6 py-8 bg-white rounded-md shadow-md">
         <div class="text-center">
-            <h1 class="text-2xl font-bold text-gray-900">Orion</h1>
+            <h1 class="text-2xl font-bold text-gray-900">SAATHI</h1>
             <p class="mt-2 text-gray-600">Login to your account</p>
         </div>
         <form class="mt-6" action="/login" method="POST">
             <div>
-                <label class="block text-gray-700 font-bold mb-2" for="username">Username</label>
-                <input placeholder="username" class="bg-gray-100 border-2 border-gray-300 rounded-md py-2 px-4 w-full focus:outline-none focus:bg-white focus:border-indigo-500" type="text" name="username" id="username" required>
+                <label class="block text-gray-700 font-bold mb-2" for="username">Email</label>
+                <input placeholder="email" class="bg-gray-100 border-2 border-gray-300 rounded-md py-2 px-4 w-full focus:outline-none focus:bg-white focus:border-indigo-500" type="email" name="email" id="email" required>
             </div>
+          
             <div class="mt-4">
                 <label class="block text-gray-700 font-bold mb-2" for="password">Password</label>
                 <input placeholder="password" class="bg-gray-100 border-2 border-gray-300 rounded-md py-2 px-4 w-full focus:outline-none focus:bg-white focus:border-indigo-500" type="password" name="password" id="password" required>
@@ -47,7 +48,7 @@
             </div>
         </form>
         <div class="mt-8 text-center">
-            <p class="text-gray-600">Don't have an account? <a class="text-indigo-500 font-bold" href="#">Sign up</a></p>
+            <p class="text-gray-600">Don't have an account? <a class="text-indigo-500 font-bold" href="/signup">Sign up</a></p>
         </div>
     </div>
 </body>

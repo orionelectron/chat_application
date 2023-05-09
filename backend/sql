@@ -47,3 +47,51 @@ CREATE TABLE notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+
+-- User table
+CREATE TABLE users (
+  user_id INT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL
+);
+
+-- Friend table
+CREATE TABLE friends (
+  user_id INT NOT NULL,
+  friend_id INT NOT NULL,
+  PRIMARY KEY (user_id, friend_id),
+  FOREIGN KEY (user_id) REFERENCES users(user_id),
+  FOREIGN KEY (friend_id) REFERENCES users(user_id)
+);
+
+-- Post table
+CREATE TABLE posts (
+  post_id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  content TEXT NOT NULL,
+  photo_url VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Like table
+CREATE TABLE likes (
+  user_id INT NOT NULL,
+  post_id INT NOT NULL,
+  PRIMARY KEY (user_id, post_id),
+  FOREIGN KEY (user_id) REFERENCES users(user_id),
+  FOREIGN KEY (post_id) REFERENCES posts(post_id)
+);
+
+-- Comment table
+CREATE TABLE comments (
+  comment_id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  post_id INT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id),
+  FOREIGN KEY (post_id) REFERENCES posts(post_id)
+);

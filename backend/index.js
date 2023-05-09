@@ -117,7 +117,8 @@ app.post('/signup', (req, res) => {
 
             req.session.username = username;
 
-            res.redirect('/chat?username=' + username);
+            //res.redirect('/chat?username=' + username);
+            res.redirect('/news_feed');
         });
     });
 });
@@ -161,6 +162,16 @@ app.get('/chat', requireAuth, (req, res) => {
         token: token
     });
 });
+
+app.get('/news_feed', (req, res) => {
+    const user_id = req.query.user_id;
+    const token = req.query.token;
+    let filePath = path.join(__dirname, '../frontend/newsfeed.html')
+    res.render(filePath, {
+        user_id: user_id,
+        token: token
+    });
+})
 
 app.post('/upload', (req, res) => {
     upload(req, res, (err) => {
@@ -231,7 +242,6 @@ io.use((socket, next) => {
     });
 });
 
-
 // handle incoming socket connections
 io.on('connection', (socket) => {
     console.log('a user connected', socket.handshake.query);
@@ -265,7 +275,14 @@ io.on('connection', (socket) => {
 
             if (disconnected) {
                 console.log('user_disconnected ', conversationId, data);
-                socket.to(conversationId).emit('user-disconnected', socket.user_id);
+                const rooms = Object.keys(socket.rooms).filter((room) => room !== socket.id);
+
+                // Emit the notification to all the rooms that the socket is in
+                rooms.forEach((room) => {
+                    socket.to(room).emit('user-disconnected', socket.user_id);
+                    console.log(`Sent notification to room ${room}`);
+                });
+
             }
 
         });

@@ -20,7 +20,18 @@ let friends_list = [];
 let friend_typing_count = 0;
 
 const socket = io("https://192.168.1.187:3000", { query: { token, user_id }, rejectUnauthorized: false });
+function create_conversation_id(userId, otherUserId) {
+    // Sort the user IDs to ensure consistency in conversation IDs
+    const sortedIds = [userId, otherUserId].sort();
 
+    // Concatenate the sorted IDs with a separator to create a conversation ID
+    const conversationId = sortedIds.join('-');
+
+    // Check if a conversation with this ID already exists
+    return conversationId;
+
+
+}
 socket.on('user-connected', (friend_id) => {
     console.log("user connected!!")
     set_friends_status(friend_id, true);
@@ -195,9 +206,10 @@ function send_message(value = "") {
         attachment_list_items = [];
         clear_attachment_view();
         close_attachment_view();
-
+        user_message_input.value = "";
         console.log("message store aftr send message", messageStore);
     }
+
 
 
 
@@ -447,7 +459,7 @@ function render_message(message) {
             if (message.files.length > 0) {
                 console.log("grid grid-cols-1 p-2");
                 return "grid grid-cols-1 p-2"
-                
+
             }
 
             return ""
@@ -580,35 +592,25 @@ function fetch_messages(userId) {
         });
 }
 
-async function fetch_friends(userId) {
-    const data = {
-        id: userId,
-
-    };
-
-    const options = {
+async function fetchFriends(userId) {
+    try {
+      const response = await fetch(`https://192.168.1.187:3000/friends?user_id=${userId}`, {
         method: 'GET',
         headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    };
-
-    fetch('https://192.168.1.187:3000/friends?user_id=' + user_id,)
-        .then(response => response.json())
-        .then(data => {
-            // Process the data
-            console.log(data);
-            friends_list = data;
-            render_friendlist();
-            select_friend(friends_list[0].id);
-
-        })
-        .catch(error => {
-            console.error('Error fetching data:', error);
-        });
-
-}
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      const friends_list = data;
+      render_friendlist();
+      select_friend(friends_list[0].id);
+      for (let i = 0; i < friends_list.length; i++) {
+        socket.emit('join-room', { from_user: userId, to_user: friends_list[i].id });
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
 
 file_chooser.addEventListener('change', (event) => {
     const files = Array.from(event.target.files);
