@@ -19,42 +19,9 @@ const token = document.getElementById('token').value || '1234';
 let post_attachment_list = [];
 let live_search_list = [];
 
-let friend_request_list = [{
-    id: 1,
-    from_user: 3,
-    to_user: 4,
-    username: "Pawan Kandel",
-    photo_path: "https://picsum.photos/600/400",
-    accepted: false,
-    timestamp: 3333333333
-},
-{
-    id: 1,
-    from_user: 3,
-    to_user: 4,
-    username: "Orion Electron",
-    photo_path: "https://picsum.photos/600/400",
-    accepted: false,
-    timestamp: 3333333333
-},
-{
-    id: 1,
-    from_user: 3,
-    to_user: 4,
-    username: "drona kanta kandel",
-    photo_path: "https://picsum.photos/600/400",
-    accepted: false,
-    timestamp: 3333333333
-}];
-let notifications_list = [{
-    id: 1,
-    from_user: 1,
-    to_user: 3,
-    status: "unread",
-    username: "Orion Electron",
-    notification_message: "Liked your post",
-    timestamp: 3234244461
-}];
+let friend_request_list = [];
+let notifications_list = [
+    ];
 
 let top_places_list = [
     {
@@ -261,9 +228,9 @@ function render_friend_request_list() {
                                 <p class="font-medium text-gray-800">{username}</p>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="accept_friend_request()"
+                                <button onclick="accept_friend_request({friend_request_id})"
                                     class="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">Accept</button>
-                                <button onclick="reject_friend_request()"
+                                <button onclick="reject_friend_request({friend_request_id})"
                                     class="bg-red-500 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">Reject</button>
                             </div>
                         </div>
@@ -292,11 +259,57 @@ function render_friend_request_list() {
     }
     friend_request_container.innerHTML = final_html;
 }
-function accept_friend_request(){
-    console.log("Accepted friend request");
+function get_friend_request(friend_request_id){
+    
+    for(let i=0;i<friend_request_list.length; i++){
+        if(friend_request_list[i].friend_request_id == friend_request_id){
+            
+            return friend_request_list[i];
+        }
+    }
+    
+    
 }
-function reject_friend_request(){
-    console.log("Rejected friend request");
+function accept_friend_request(friend_request_id){
+    console.log("Accepted friend request", friend_request_id);
+    let friend_request = get_friend_request(friend_request_id);
+    console.log(friend_request)
+    axios.get('https://192.168.1.187:3000/friend_requests/accept', {
+        params: {
+            from_user: friend_request.to_user_id,
+            to_user: friend_request.from_user_id,
+            friend_request_id
+
+        }
+        
+    })
+        .then(function (response) {
+            console.log(response.data);
+            
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+function reject_friend_request(friend_request_id){
+    console.log("Rejected friend request", friend_request_id);
+    let friend_request = get_friend_request(friend_request_id);
+    console.log(friend_request)
+    axios.get('https://192.168.1.187:3000/friend_requests/reject', {
+        params: {
+            from_user: friend_request.to_user_id,
+            to_user: friend_request.from_user_id,
+            friend_request_id
+
+        }
+    })
+        .then(function (response) {
+            console.log(response.data);
+            
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
 }
 function render_friend_poll() {
     let template = `
@@ -602,8 +615,12 @@ function close_message_container() {
     message_container.classList.add("hidden")
 }
 function fetch_friend_requests() {
-    axios.get('https://192.168.1.187:3000/friend_requests/' + user_id, {
-
+    axios.get('https://192.168.1.187:3000/friend_requests', {
+    params: {
+       id:  user_id,
+       page: 1,
+       limit: 10
+    }
     })
         .then(function (response) {
             console.log(response.data);

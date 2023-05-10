@@ -291,8 +291,8 @@ app.get('/friends', requireAuth, (req, res) => {
 
     // TODO: Query the database to get the list of friends for the current user
     // For example, assuming you have a User model in Mongoose:
-    const id = req.session.user_id;
-
+    const id =  req.session.user_id;
+    console.log("user id", id)
     const sql = 'select * from friends INNER JOIN users on friends.friend_id = users.id where friends.friend_id  = ?';
     pool.query(sql, [id], (err, result) => {
         if (err) {
@@ -336,11 +336,53 @@ app.get('/photos/:photoName', (req, res) => {
         }
     });
 });
+app.get('/friend_requests/accept', async (req, res) => {
+    const { friend_request_id, from_user, to_user } = req.query;
+    console.log(req.query)
+    let sql = `UPDATE friend_requests
+     SET status = 'accepted'
+     WHERE id = ?;`;
+    let params = [friend_request_id];
+    try {
+        let results = await queryDatabase(sql, params);
+        let stmt = `INSERT INTO notifications(from_user,to_user,status,type,message,notification_source) VALUES (?, ?, ?, ?, ?, ?)`;
+        params = [from_user, to_user, "unread", "friend_request", "Accepted your Request", friend_request_id];
+        results = await queryDatabase(stmt, params);
+        stmt = `INSERT INTO friends(user_id, friend_id) VALUES (?,?)`;
+        params = [from_user, to_user]
+        results = await queryDatabase(stmt, params)
+        return res.json(results);
+    }
+    catch (error) {
+        console.log(error);
+    }
 
-app.get('/friend_requests/:id', async (req, res) => {
-    console.log(req.params);
+});
+app.get('/friend_requests/reject', async (req, res) => {
+    const { friend_request_id, from_user, to_user } = req.query;
+    let transactions = [
+        {
+            id: "request",
+            query: `UPDATE friend_requests
+            SET status = 'rejected'
+            WHERE id = ?;`,
+            parameters: [friend_request_id]
+        },
+        {
+            id: "notifications",
+            query: `INSERT INTO notifications(from_user,to_user,status,type,message,notification_source) VALUES (?, ?, ?, ?, ?, ?)`,
+            parameters: [from_user, to_user, "unread", "friend_request", "Rejected your Request", friend_request_id]
+        }
+    ];
+    let results = await executeTransactions(transactions);
+    console.log(results, "results reject")
+    res.json(results);
+    
+});
+app.get('/friend_requests', async (req, res) => {
+    console.log(req.query);
 
-    const { id, page = 1, limit = 10 } = req.params;
+    const { id, page = 1, limit = 10 } = req.query;
 
     if (!id) {
         res.status(400).json({ error: 'You must provide a search query' });
@@ -349,8 +391,8 @@ app.get('/friend_requests/:id', async (req, res) => {
 
     // Build the SQL query string
     const offset = (page - 1) * limit;
-    const sql = 'select from_user_id  , to_user_id, username, profile_picture_path, status from friend_requests INNER JOIN users on friend_requests.to_user_id = users.id where friend_requests.to_user_id = ? LIMIT ? OFFSET ?';
-    const params = [parseInt(id, 16), 10, offset];
+    const sql = 'select friend_requests.id as friend_request_id, from_user_id  , to_user_id, username, profile_picture_path, status from friend_requests INNER JOIN users on friend_requests.to_user_id = users.id where friend_requests.status = "pending" and friend_requests.to_user_id = ? LIMIT ? OFFSET ?';
+    const params = [parseInt(id), 10, offset];
 
     // Execute the SQL query
     try {
@@ -372,12 +414,12 @@ app.post('/friend_requests', async (req, res) => {
 
 
     const sql = 'INSERT INTO friend_requests(from_user_id, to_user_id, status) VALUES(?,?,?)';
-    let params = [from_user_id, to_user_id, 'pending']
+    let params = [parseInt(from_user_id), to_user_id, 'pending']
 
     // Execute the SQL query
     try {
         const results = await queryDatabase(sql, params);
-        let stmt = 'INSERT INTO notifications(from_user, to_user, message, notification_source, type, status) VALUES (?, ?, ?, ?, ?)';
+        let stmt = 'INSERT INTO notifications(from_user, to_user, message, notification_source, type, status) VALUES (?, ?, ?, ?, ?, ?)';
         params = [from_user_id, to_user_id, "sent you a friend request", results.insertId, "friend_request", "unread"]
         let second_results = await queryDatabase(stmt, params);
         console.log(results.insertId, second_results.insertId)
@@ -557,4 +599,60 @@ function create_conversation_id(userId, otherUserId) {
     return conversationId;
 
 
+}
+function getConnectionFromPool() {
+    return new Promise((resolve, reject) => {
+      pool.getConnection((err, connection) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(connection);
+      });
+    });
+  }
+ async function executeTransactions(queries) {/*arr of  id, query, parameters */
+  
+    return new Promise(async (resolve, reject) => {
+        let connection = await getConnectionFromPool();
+        try {
+            let results = {};
+            connection.beginTransaction((beginTransactionError) => {
+                if (beginTransactionError !== null) {
+                    reject(beginTransactionError.message);
+                }
+                // Loop through all queries
+                for (const query of queries) {
+                    pool.query(query.query, query.parameters, (queryError , queryResults, fields) => {
+                        // If the query errored, then rollback and reject
+                        if (queryError !== null) {
+                            // Try catch the rollback end reject if the rollback fails
+                            try {
+                                pool.rollback((rollbackError) => {
+                                    reject(rollbackError.message);
+                                });
+                            } catch (rollbackError) {
+                                reject(rollbackError.message);
+                            }
+                        }
+                        //console.log(queryResults)
+                        // Push the result into an array and index it with the ID passed for searching later
+                        results[query.id] = {
+                            result: queryResults,
+                            fields: fields,
+                        };
+                    });
+                }
+                // If all loops have itterated and no errors, then commit
+                connection.commit((commitError) => {
+                    if (commitError !== null) {
+                        reject(commitError.message);
+                    }
+                    resolve(results);
+                });
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
