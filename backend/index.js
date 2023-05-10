@@ -1,5 +1,5 @@
 const express = require('express');
-
+const bcrypt = require('bcrypt');
 const https = require('https');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -9,13 +9,14 @@ const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const jwt = require('jsonwebtoken');
-const multer = require('multer');
+
 var cors = require('cors')
 const app = express();
 app.use(cors())
 let conversations = [];
 
-
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '50mb' }));
 
 const httpPort = 8080;
 const httpsPort = 3000;
@@ -41,22 +42,9 @@ const pool = mysql.createPool({
     database: 'matrimonial'
 });
 
-const storage = multer.diskStorage({
-    destination: './uploads/',
-    filename: function (req, file, cb) {
-        console.log("file upload!!");
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-    }
-});
-
-// Initialize upload
-const upload = multer({
-    storage: storage
-}).array('files', 10);
 
 
-// keep track of connected clients
-let clients = {};
+
 app.use(bodyParser.urlencoded({ extended: false }));
 // serve static files
 app.get('/', express.static(path.join(__dirname, '../frontend')));
@@ -92,44 +80,46 @@ app.get('/signup', (req, res) => {
 });
 
 app.post('/signup', (req, res) => {
-    const { username, email, password } = req.body;
+    const { username, email, password, gender, birthdate } = req.body;
 
-    // Check if the username or email already exists in the database
-    pool.query('SELECT * FROM matrimonial.users WHERE username = ? OR email = ?', [username, email], (err, results) => {
+    // Hash the password before storing it in the database
+    bcrypt.hash(password, 10, (err, hash) => {
         if (err) {
             console.error(err);
-            res.status(500).send('Server error');
-            return;
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            // Insert user data into the database
+            const sql = `INSERT INTO users (username, email, password, gender, birthdate) 
+                   VALUES (?, ?, ?, ?, ?)`;
+            const values = [username, email, hash, gender, birthdate];
+            pool.query(sql, values, (err, result) => {
+                if (err) {
+                    console.error(err);
+                    res.status(500).json({ error: 'Internal Server Error' });
+                } else {
+                    console.log(result)
+                    const token = jwt.sign({ id: result.insertId }, 'orion');
+
+                    // Return the token to the client
+                    req.session.user_id = result.insertId;
+                    req.session.token = token;
+
+                    res.redirect('https://192.168.1.187:3000/news_feed?user_id=' + result.insertId + '&' + 'token=' + token);
+                    //res.status(201).json({ message: 'User created successfully' });
+                }
+            });
         }
-
-        if (results.length > 0) {
-            res.status(400).send('Username or email already exists');
-            return;
-        }
-
-        // Insert the new user into the database
-        pool.query('INSERT INTO matrimonial.users (username, email, password) VALUES (?, ?, ?)', [username, email, password], (err, result) => {
-            if (err) {
-                console.error(err);
-                res.status(500).send('Server error');
-                return;
-            }
-
-            req.session.username = username;
-
-            //res.redirect('/chat?username=' + username);
-            res.redirect('/news_feed');
-        });
     });
 });
 
 // Login endpoint
 app.post('/login', (req, res) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     console.log("login data ", req.body);
 
+
     // Check if the username and password match a user in the database
-    pool.query('SELECT * FROM matrimonial.users WHERE username = ? AND password = ?', [username, password], (err, results) => {
+    pool.query('SELECT * FROM matrimonial.users WHERE email = ?', [email], (err, results) => {
         if (err) {
             console.error(err);
             res.status(500).send('Server error');
@@ -141,6 +131,10 @@ app.post('/login', (req, res) => {
             res.status(400).send('Invalid username or password');
             return;
         }
+        bcrypt.compare(password, results[0].password, function (err, result) {
+            if (err)
+                res.status(400).send("invalid username or password");
+        });
         //console.log("results", results[0].id);
         const token = jwt.sign({ id: results[0].id }, 'orion');
 
@@ -148,8 +142,9 @@ app.post('/login', (req, res) => {
         req.session.user_id = results[0].id;
         req.session.token = token;
 
-        res.redirect('/chat?user_id=' + results[0].id + '&' + 'token=' + token);
+        res.redirect('https://192.168.1.187:3000/news_feed?user_id=' + results[0].id + '&' + 'token=' + token);
     });
+
 });
 
 app.get('/chat', requireAuth, (req, res) => {
@@ -173,16 +168,119 @@ app.get('/news_feed', (req, res) => {
     });
 })
 
-app.post('/upload', (req, res) => {
-    upload(req, res, (err) => {
-        if (err) {
-            // Handle error
-            res.status(400).send('Error uploading file(s).');
-        } else {
-            // Files uploaded successfully
-            res.status(200).send('File(s) uploaded.');
-        }
+
+// Define the search endpoint
+app.get('/users/search', async (req, res) => {
+    const { query } = req;
+    const { search, page = 1, limit = 10 } = query;
+
+    if (!search) {
+        res.status(400).json({ error: 'You must provide a search query' });
+        return;
+    }
+
+    // Build the SQL query string
+    const offset = (page - 1) * limit;
+    const sql = 'SELECT id, username, gender, profile_picture_path FROM users WHERE username LIKE ? OR email LIKE ? LIMIT ? OFFSET ?';
+    const params = [`%${search}%`, `%${search}%`, 10, offset];
+
+    // Execute the SQL query
+    try {
+        const results = await queryDatabase(sql, params);
+        console.log(results)
+        res.json(results);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'An error occurred while executing the query' });
+    }
+});
+function save_post_files(data) {
+    const uploadDir = './uploads';
+    let renamed_files = [];
+    data.files.forEach((file) => {
+        // Get the current timestamp
+        const timestamp = Date.now();
+
+        // Set the filename prefix
+        const filenamePrefix = `photo_${timestamp}`;
+
+        // Get the file data from somewhere (e.g. a form submission)
+        const fileData = file.file_data;
+        const binaryData = Buffer.from(fileData, 'base64');
+        //console.log(binaryData)
+
+        // Get the file extension from the original filename
+        const fileExtension = path.extname(file.file_name);
+
+        // Set the full file path
+        const filePath = path.join(uploadDir, `${filenamePrefix}${fileExtension}`);
+
+        // Save the file to the upload directory
+        fs.writeFile(filePath, binaryData, (err) => {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(`File saved as ${filePath}`);
+                renamed_files.push('https://192.168.1.187:3000/photos/' + filenamePrefix);
+            }
+        });
     });
+    return renamed_files;
+
+}
+function queryDatabase(queryString, params) {
+    return new Promise((resolve, reject) => {
+        pool.query(queryString, params, (err, results, fields) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(results);
+            }
+        });
+    });
+}
+
+app.post('/posts', async (req, res) => {
+    //console.log(req.body);
+    try {
+        const { user_id, content, type, files } = req.body;
+
+        let renamed_files = save_post_files(req.body);
+        console.log(renamed_files, "renamed files");
+        // Insert post into the database
+        const result = await queryDatabase(
+            'INSERT INTO posts (user_id, content, type) VALUES (?, ?, ?)',
+            [user_id, content, type])
+
+        const postId = result.insertId;
+        //console.log(result);
+        //console.log(postId, "postId")
+
+        // Insert files into the database
+        if (files.length > 0) {
+            const fileData = files.map((file) => [
+                postId,
+                file.originalname,
+                file.mimetype,
+                file.path,
+            ]);
+            renamed_files.forEach(async (file_path) => {
+                await queryDatabase(
+                    'INSERT INTO post_photos (post_id, post_photo_url) VALUES (?, ?)',
+                    [postId, file_path]
+                );
+            });
+
+        }
+
+        res.status(201).json({ message: 'Post created successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+
+
+
 });
 
 app.get('/friends', requireAuth, (req, res) => {
@@ -195,7 +293,7 @@ app.get('/friends', requireAuth, (req, res) => {
     // For example, assuming you have a User model in Mongoose:
     const id = req.session.user_id;
 
-    const sql = 'SELECT * FROM matrimonial.users WHERE id != ?';
+    const sql = 'select * from friends INNER JOIN users on friends.friend_id = users.id where friends.friend_id  = ?';
     pool.query(sql, [id], (err, result) => {
         if (err) {
             throw err;
@@ -216,6 +314,82 @@ app.get('/friends', requireAuth, (req, res) => {
         res.send(redacted);
     });
 });
+
+app.get("/news_feed_data/user/:id", (req, res) => {
+
+})
+
+app.get('/photos/:photoName', (req, res) => {
+    const photoName = req.params.photoName;
+    const filePath = path.join(__dirname, 'uploads', photoName);
+
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send({ error: 'Failed to retrieve photo' });
+        } else {
+            const fileData = Buffer.from(data).toString('base64');
+            const fileType = path.extname(filePath).substr(1);
+
+            const dataUri = `data:${fileType};base64,${fileData}`;
+            res.send({ dataUri });
+        }
+    });
+});
+
+app.get('/friend_requests/:id', async (req, res) => {
+    console.log(req.params);
+
+    const { id, page = 1, limit = 10 } = req.params;
+
+    if (!id) {
+        res.status(400).json({ error: 'You must provide a search query' });
+        return;
+    }
+
+    // Build the SQL query string
+    const offset = (page - 1) * limit;
+    const sql = 'select from_user_id  , to_user_id, username, profile_picture_path, status from friend_requests INNER JOIN users on friend_requests.to_user_id = users.id where friend_requests.to_user_id = ? LIMIT ? OFFSET ?';
+    const params = [parseInt(id, 16), 10, offset];
+
+    // Execute the SQL query
+    try {
+        const results = await queryDatabase(sql, params);
+        console.log(results)
+        res.json(results);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'An error occurred while executing the query' });
+    }
+
+});
+
+app.post('/friend_requests', async (req, res) => {
+    const { to_user_id, from_user_id } = req.body
+    console.log("post frined request", to_user_id, from_user_id);
+
+
+
+
+    const sql = 'INSERT INTO friend_requests(from_user_id, to_user_id, status) VALUES(?,?,?)';
+    let params = [from_user_id, to_user_id, 'pending']
+
+    // Execute the SQL query
+    try {
+        const results = await queryDatabase(sql, params);
+        let stmt = 'INSERT INTO notifications(from_user, to_user, message, notification_source, type, status) VALUES (?, ?, ?, ?, ?)';
+        params = [from_user_id, to_user_id, "sent you a friend request", results.insertId, "friend_request", "unread"]
+        let second_results = await queryDatabase(stmt, params);
+        console.log(results.insertId, second_results.insertId)
+        res.json(results);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Couldnt send friend request' });
+    }
+})
+
+
+
 
 
 
@@ -280,7 +454,7 @@ io.on('connection', (socket) => {
                 // Emit the notification to all the rooms that the socket is in
                 rooms.forEach((room) => {
                     socket.to(room).emit('user-disconnected', socket.user_id);
-                    console.log(`Sent notification to room ${room}`);
+                    console.log(`Sent notification to room ${room} `);
                 });
 
             }
@@ -369,7 +543,7 @@ io.on('connection', (socket) => {
 const PORT = 3000;
 
 httpsServer.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT} `);
 });
 
 function create_conversation_id(userId, otherUserId) {

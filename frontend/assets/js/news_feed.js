@@ -4,7 +4,20 @@ let message_content_container = document.getElementById("message_content_contain
 let notification_content_container = document.getElementById("notification_content_container");
 let top_places_container = document.getElementById("top_places_container");
 let friend_request_container = document.getElementById("friend_request_container");
+let post_file_chooser = document.getElementById("post_file_chooser");
+let attachment_view = document.getElementById("attachment_view");
+let post_send_button = document.getElementById("post_send_button");
+let post_content_input = document.getElementById("post_content_input");
+let live_search_bar = document.getElementById("live_search_bar");
+let live_search_container = document.getElementById("live_search_container");
+let live_search_content_container = document.getElementById("live_search_content_container");
+const user_id = document.getElementById('user_id').value || 123;
+const token = document.getElementById('token').value || '1234';
 
+
+
+let post_attachment_list = [];
+let live_search_list = [];
 
 let friend_request_list = [{
     id: 1,
@@ -55,16 +68,16 @@ let top_places_list = [
     },
     {
         id: 1,
-        name: "Bharatpur",
+        name: "Palace",
         description: "This is a good tourist destination for those who want to live their best life",
         photo_path: "https://picsum.photos/600/400",
-        location: "chitwan",
+        location: "Palpa",
         rating: 5
 
     },
     {
         id: 1,
-        name: "Bharatpur",
+        name: "National Park",
         description: "This is a good tourist destination for those who want to live their best life",
         photo_path: "https://picsum.photos/600/400",
         location: "chitwan",
@@ -96,9 +109,24 @@ function timeAgo(timestamp) {
     }
 }
 
-function open_messenger(){
-    
+function open_messenger() {
+
 }
+
+let live_search_bar_timeout = null;
+live_search_bar.addEventListener("input", (event) => {
+
+    clearTimeout(live_search_bar_timeout);
+    live_search_bar_timeout = setTimeout(() => {
+
+        let username = event.target.value.toLowerCase();
+        search_for_users(username);
+
+
+    }, 1000)
+
+
+})
 
 function render_top_places_list() {
     let final_html = '<h2 class="text-xl font-bold mb-4">Top Places</h2>';
@@ -226,16 +254,16 @@ function render_friend_request_list() {
         <li class="p-4">
                         <div class="flex items-center space-x-4">
                             <div class="flex-shrink-0">
-                                <img class="h-10 w-10 rounded-full" src="{photo_path}"
+                                <img class="h-10 w-10 rounded-full" src="{profile_picture_path}"
                                     alt="Profile picture">
                             </div>
                             <div class="flex-grow">
                                 <p class="font-medium text-gray-800">{username}</p>
                             </div>
                             <div class="flex gap-2">
-                                <button
+                                <button onclick="accept_friend_request()"
                                     class="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">Accept</button>
-                                <button
+                                <button onclick="reject_friend_request()"
                                     class="bg-red-500 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">Reject</button>
                             </div>
                         </div>
@@ -250,6 +278,9 @@ function render_friend_request_list() {
             if (key === "time_ago") {
                 return timeAgo(friend_request.timestamp);
             }
+            else if(key == "profile_picture_path"){
+               return "https://source.unsplash.com/random"
+            }
             else {
                 return friend_request[key] || "";
             }
@@ -260,6 +291,219 @@ function render_friend_request_list() {
         final_html = final_html + final_template;
     }
     friend_request_container.innerHTML = final_html;
+}
+function accept_friend_request(){
+    console.log("Accepted friend request");
+}
+function reject_friend_request(){
+    console.log("Rejected friend request");
+}
+function render_friend_poll() {
+    let template = `
+    <div class="p-4 bg-white rounded-lg shadow-md flex flex-col gap-2">
+    <div class="flex space-x-4">
+        <div class="flex-shrink-0">
+            <img class="h-12 w-12 rounded-full object-cover" src="https://picsum.photos/200">
+        </div>
+        <div class="flex-grow">
+            <p class="text-gray-700 font-bold">John Doe</p>
+            <p class="text-gray-600">2 hours ago</p>
+        </div>
+        <div class="flex-shrink-0">
+            <button class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+        </div>
+    </div>
+    <h2 class="text-lg font-medium mb-4">What's your favorite color?</h2>
+    <form class="space-y-2">
+        <div class="flex items-center  gap-3">
+            <input id="color1" type="radio" name="color"
+                class="appearance-none h-4 w-4 border border-gray-300 rounded-full checked:bg-blue-500 checked:border-transparent focus:outline-none">
+            <label for="color1" class="text-gray-700">Blue</label> 
+            <p class="text-blue-600 font-bold"> 75% voted for this</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <input id="color2" type="radio" name="color"
+                class="appearance-none h-4 w-4 border border-gray-300 rounded-full checked:bg-red-500 checked:border-transparent focus:outline-none">
+            <label for="color2" class="text-gray-700 ">Red</label>
+            <p class=" text-blue-600  font-bold"> 25% voted for this</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <input type="text"
+                class="basis-4/6 w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:border-blue-500"
+                placeholder="Add poll option">
+            <button
+                class="basis-2/6 bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg ml-2">Add
+                option</button>
+        </div>
+    </form>
+</div>
+    `;
+}
+function clear_attachment_view() {
+    attachment_view.innerHTML = "";
+
+}
+function render_attachment_view() {
+    clear_attachment_view();
+    let file_template = `<div
+    class=" attachment-view-item relative p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
+    <i class="fa-solid fa-file fa-xl hover:cursor-pointer" style="color: #025cf7;"></i>
+    <p class="font-semibold"> {filename}</p>
+    <div onclick='remove_from_attachment_list("{filename}")' class=" attachment_view_item absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
+    </div>
+</div>`;
+    let photo_template = `<div
+class="attachment-view-item relative  p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
+
+<div class="font-semibold"> <img src="{photo}"> </img></div>
+<div onclick='remove_from_attachment_list("{filename}")' class="attachment_view_item absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
+</div>
+</div>`;
+
+    post_attachment_list.forEach(({ file_name, file_type, file_data }) => {
+        if (file_type.startsWith('image/')) {
+
+            let img_src = `data:${file_type};base64,${file_data}`;
+            let final_template = photo_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "photo") {
+                    return img_src;
+                }
+                else if (key === "filename") {
+                    return file_name;
+                }
+
+
+
+            });
+            attachment_view.innerHTML = attachment_view.innerHTML + final_template;
+
+
+        }
+        else {
+            let final_template = file_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "filename") {
+                    return file_name;
+                }
+            });
+            attachment_view.innerHTML = attachment_view.innerHTML + final_template;
+        }
+    });
+
+}
+function remove_from_attachment_list(input_file_name) {
+    console.log("input file name for removal ", input_file_name);
+    post_attachment_list = post_attachment_list.filter((post_attachment_item) => {
+        console.log("post_attachment_item ", post_attachment_item.file_name, input_file_name);
+        if (input_file_name == post_attachment_item.file_name)
+            return false;
+        return true;
+    });
+    console.log("filtered attachment list items ", post_attachment_list);
+    clear_attachment_view();
+    render_attachment_view();
+
+}
+function open_post_attachment_view() {
+    if (attachment_view.classList.contains('hidden'))
+        attachment_view.classList.remove('hidden');
+    post_file_chooser.click();
+}
+function close_post_attachment_view() {
+    if (!attachment_view.classList.contains('hidden'))
+        attachment_view.classList.add('hidden');
+}
+post_file_chooser.addEventListener('change', (event) => {
+    const files = Array.from(event.target.files);
+    /*
+    let file_names = files.map((file) => {
+        const stripped_filename = file.name.split('.').slice(0, -1).join('.');;
+        const prefix = [user_id, current_friend.id].sort().join('-');
+        return prefix + stripped_filename;
+    })
+    */
+
+
+    const promises = files.map((file) => {
+        //let stripped_filename = file.name.split('.').slice(0, -1).join('.');
+        const prefix = user_id;
+        let stripped_filename = prefix + file.name;
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const fileData = reader.result.split(',')[1];
+                resolve({ file_name: stripped_filename, file_type: file.type, file_data: fileData });
+            };
+
+            reader.readAsDataURL(file);
+        });
+    });
+
+    Promise.all(promises).then((files) => {
+        //socket.emit('sendFiles', { files });
+        files.forEach((file) => {
+            post_attachment_list.push(file);
+        });
+
+        console.log("Attachment list items ", post_attachment_list);
+        render_attachment_view();
+    });
+
+});
+function clear_post_input() {
+    post_content_input.value = "";
+}
+function clear_search_bar_input() {
+    live_search_bar.value = "";
+}
+function prevent_form_default(event) {
+    event.preventDefault();
+}
+function search_for_users(param) {
+    axios.get('https://192.168.1.187:3000/users/search', {
+        params: {
+            'search': param,
+            'page': 1,
+            'limit': 10
+
+        }
+    })
+        .then(function (response) {
+            console.log(response.data);
+            live_search_list = response.data;
+            display_live_search_container();
+            clear_search_bar_input()
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+
+function send_post() {
+    let data = {
+        user_id,
+        content: post_content_input.value || "",
+        files: post_attachment_list,
+        type: "post",
+
+    }
+
+
+    axios.post('https://192.168.1.187:3000/posts', data)
+        .then(function (response) {
+            console.log(response);
+            clear_post_input()
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+
+
+
 }
 
 function toggle_notification_container() {
@@ -288,12 +532,107 @@ function toggle_message_container() {
         close_message_container();
     }
 }
+function toggle_live_search_container() {
+    if (live_search_container.classList.contains('hidden')) {
+        display_live_search_container();
+    }
+    else {
+        close_live_search_container();
+    }
+}
 function display_message_container() {
     message_container.classList.remove("hidden")
 }
+function render_live_search_results() {
+    live_search_content_container.innerHTML = "";
+    let final_html = "";
+    template = `
+    <div onclick=""
+                    class="friend-item flex p-1 bg-violet-100 items-center hover:cursor-pointer  rounded-md  items-center justify-between flex-row">
+                    <div class="user-photo-round-small relative w-16 h-16 mr-4">
+                        <img class="rounded-full border w-16 h-16 border-gray-100 shadow-sm"
+                            src="{photo_path}" />
+                        <div
+                            class="friendlist_online_indicator absolute top-0 right-0 h-4 w-4 my-1 border-2 border-white rounded-full {isOnline} z-2">
+                        </div>
+                    </div>
+                    <div class="user-name-last-message flex flex-col">
+                        <p class="username font-bold text-lg">
+                            {username}
+                        </p>
+                        <p class="gender font-bold text-md">
+                            {gender}
+                        </p>
 
+                    </div>
+                    <div>
+                        <button onclick="send_friend_request({id})"class="bg-blue-600 hover:bg-blue-800 p-2 text-white rounded-md"> Send Request  </button>
+                    </div>
+
+                </div>
+    `;
+    live_search_list.forEach((live_search_item) => {
+        let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+            if (key === "isOnline") {
+                return "bg-green-600";
+            }
+            else if (key == "photo_path") {
+                return "https://picsum.photos/600/400";
+            }
+            else {
+                return live_search_item[key] || "";
+            }
+
+
+        });
+        //console.log("template", friend_template);
+        final_html = final_html + final_template;
+    });
+    live_search_content_container.innerHTML = final_html;
+}
+function display_live_search_container() {
+    live_search_container.classList.remove('hidden');
+    render_live_search_results();
+}
+function close_live_search_container() {
+    live_search_container.classList.add('hidden');
+}
 function close_message_container() {
     message_container.classList.add("hidden")
 }
+function fetch_friend_requests() {
+    axios.get('https://192.168.1.187:3000/friend_requests/' + user_id, {
+
+    })
+        .then(function (response) {
+            console.log(response.data);
+            friend_request_list = response.data;
+            render_friend_request_list();
+
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+function render_posts_container() {
+
+}
+
+function send_friend_request(id) {
+    console.log("sent friend request to ", id)
+    axios.post('https://192.168.1.187:3000/friend_requests', {
+        to_user_id: id,
+        from_user_id: user_id
+    })
+        .then(function (response) {
+            console.log(response);
+
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+fetch_friend_requests();
 render_top_places_list();
 render_friend_request_list();

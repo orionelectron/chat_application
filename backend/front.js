@@ -1,168 +1,151 @@
+// Import necessary modules
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
- const app = express();
- // Use Body Parser Middleware
-app.use(bodyParser.json());
- // Create MySQL Connection
-const db = mysql.createConnection({
+
+// Create a MySQL pool
+const pool = mysql.createPool({
+  connectionLimit: 10,
   host: 'localhost',
-  user: 'username',
+  user: 'root',
   password: 'password',
-  database: 'socialmedia',
+  database: 'mydatabase'
 });
- // Connect to MySQL
-db.connect((err) => {
-  if (err) {
-    throw err;
-  }
-  console.log('Connected to MySQL database.');
-});
- // Get Posts Endpoint
-app.get('/posts', (req, res) => {
-  const sql = 'SELECT * FROM posts';
-  db.query(sql, (err, results) => {
-    if (err) {
-      throw err;
+
+// Create a new Express application
+const app = express();
+
+// Set up middleware
+app.use(bodyParser.json());
+
+app.post('/messages', (req, res) => {
+  const fromUserId = req.body.from_user_id;
+  const toUserId = req.body.to_user_id;
+  const message = req.body.message;
+
+  // Create a new message in the database
+  pool.query(
+    'INSERT INTO messages (from_user_id, to_user_id, message) VALUES (?, ?, ?)',
+    [fromUserId, toUserId, message],
+    (error, results, fields) => {
+      if (error) throw error;
+
+      // Send the newly created message back to the client
+      const newMessage = { id: results.insertId, from_user_id: fromUserId, to_user_id: toUserId, message: message };
+      res.status(201).json(newMessage);
     }
-    res.status(200).send(results);
+  );
+});
+
+// Endpoint to add a new message file
+app.post('/message-files', (req, res) => {
+  const messageId = req.body.message_id;
+  const filePath = req.body.file_path;
+  const isPhoto = req.body.is_photo;
+
+  // Create a new message file in the database
+  pool.query(
+    'INSERT INTO message_files (message_id, file_path, is_photo) VALUES (?, ?, ?)',
+    [messageId, filePath, isPhoto],
+    (error, results, fields) => {
+      if (error) throw error;
+
+      // Send the newly created message file back to the client
+      const newMessageFile = { id: results.insertId, message_id: messageId, file_path: filePath, is_photo: isPhoto };
+      res.status(201).json(newMessageFile);
+    }
+  );
+});
+
+// Create a new notification
+app.post('/notifications', (req, res) => {
+  const { from_user, to_user, message, notification_source } = req.body;
+
+  const sql = 'INSERT INTO notifications (from_user, to_user, message, notification_source) VALUES (?, ?, ?, ?)';
+  const values = [from_user, to_user, message, notification_source];
+
+  connection.query(sql, values, (err, result) => {
+    if (err) {
+      console.error('Error creating notification:', err);
+      res.sendStatus(500);
+      return;
+    }
+    res.status(201).json({ id: result.insertId });
   });
 });
- // Create Post Endpoint
-app.post('/posts', (req, res) => {
-  const { content, author } = req.body;
-  const sql = 'INSERT INTO posts (content, author) VALUES (?, ?)';
-  db.query(sql, [content, author], (err, result) => {
+
+// Delete a notification by ID
+app.delete('/notifications/:id', (req, res) => {
+  const id = req.params.id;
+
+  const sql = 'DELETE FROM notifications WHERE id = ?';
+  const values = [id];
+
+  connection.query(sql, values, (err, result) => {
     if (err) {
-      throw err;
+      console.error('Error deleting notification:', err);
+      res.sendStatus(500);
+      return;
     }
-    const newPost = {
-      id: result.insertId,
-      content,
-      author,
-    };
-    res.status(201).send(newPost);
+    if (result.affectedRows === 0) {
+      res.sendStatus(404);
+      return;
+    }
+    res.sendStatus(204);
   });
 });
- // Like Post Endpoint
-app.post('/posts/:id/like', (req, res) => {
-  const postId = parseInt(req.params.id);
-  const userId = parseInt(req.body.userId);
-   const checkSql = 'SELECT * FROM post_likes WHERE post_id = ? AND user_id = ?';
-  db.query(checkSql, [postId, userId], (err, result) => {
+
+// Get  notifications for a user
+app.get('/notifications/:user_id', (req, res) => {
+  const user_id = req.params.user_id;
+
+  const page = parseInt(req.query.page) || 1;
+  const perPage = parseInt(req.query.per_page) || 10;
+  const offset = (page - 1) * perPage;
+
+  const countSql = 'SELECT COUNT(*) AS count FROM notifications WHERE to_user = ?';
+  const countValues = [user_id];
+
+  connection.query(countSql, countValues, (err, countResult) => {
     if (err) {
-      throw err;
+      console.error('Error getting notification count:', err);
+      res.sendStatus(500);
+      return;
     }
-    if (result.length > 0) {
-      return res.status(400).send({ message: 'You have already liked this post.' });
-    }
-     const sql = 'INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)';
-    db.query(sql, [postId, userId], (err, result) => {
+
+    const count = countResult[0].count;
+    const totalPages = Math.ceil(count / perPage);
+
+    const sql = 'SELECT * FROM notifications WHERE to_user = ? ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    const values = [user_id, perPage, offset];
+
+    connection.query(sql, values, (err, results) => {
       if (err) {
-        throw err;
+        console.error('Error getting notifications:', err);
+        res.sendStatus(500);
+        return;
       }
-      res.status(200).send({ message: 'Post liked successfully.' });
-    });
-  });
-});
- // Share Post Endpoint
-app.post('/posts/:id/share', (req, res) => {
-  const postId = parseInt(req.params.id);
-  const userId = parseInt(req.body.userId);
-   const checkSql = 'SELECT * FROM post_shares WHERE post_id = ? AND user_id = ?';
-  db.query(checkSql, [postId, userId], (err, result) => {
-    if (err) {
-      throw err;
-    }
-    if (result.length > 0) {
-      return res.status(400).send({ message: 'You have already shared this post.' });
-    }
-     const sql = 'INSERT INTO post_shares (post_id, user_id) VALUES (?, ?)';
-    db.query(sql, [postId, userId], (err, result) => {
-      if (err) {
-        throw err;
-      }
-      res.status(200).send({ message: 'Post shared successfully.' });
-    });
-  });
-});
- // Comment on Post Endpoint
-app.post('/posts/:id/comment', (req, res) => {
-  const postId = parseInt(req.params.id);
-  const { content, author } = req.body;
-  const sql = 'INSERT INTO post_comments (post_id, content, author) VALUES (?, ?, ?)';
-  db.query(sql, [postId, content, author], (err, result) => {
-    if (err) {
-      throw err;
-    }
-    const newComment = {
-      id: result.insertId,
-      content,
-      author,
-    };
-    res.status(200).send({ message: 'Comment added successfully.', comment: newComment });
-  });
-});
- // Get Friend List Endpoint
-app.get('/users/:id/friends', (req, res) => {
-  const userId = parseInt(req.params.id);
-  const sql = 'SELECT users.* FROM users JOIN friendships ON users.id = friendships.friend_id WHERE friendships.user_id = ?';
-  db.query(sql, [userId], (err, results) => {
-    if (err) {
-      throw err;
-    }
-    res.status(200).send(results);
-  });
-});
- // Send Friend Request Endpoint
-app.post('/users/:id/friend-requests', (req, res) => {
-  const userId = parseInt(req.params.id);
-  const { friendId } = req.body;
-  const checkSql = 'SELECT * FROM friend_requests WHERE user_id = ? AND friend_id = ?';
-  db.query(checkSql, [userId, friendId], (err, result) => {
-    if (err) {
-      throw err;
-    }
-    if (result.length > 0) {
-      return res.status(400).send({ message: 'Friend request already sent.' });
-    }
-     const sql = 'INSERT INTO friend_requests (user_id, friend_id) VALUES (?, ?)';
-    db.query(sql, [userId, friendId], (err, result) => {
-      if (err) {
-        throw err;
-      }
-      res.status(200).send({ message: 'Friend request sent successfully.' });
-    });
-  });
-});
- // Accept Friend Request Endpoint
-app.post('/users/:id/friend-requests/:friendId/accept', (req, res) => {
-  const userId = parseInt(req.params.id);
-  const friendId = parseInt(req.params.friendId);
-   const checkSql = 'SELECT * FROM friend_requests WHERE user_id = ? AND friend_id = ?';
-  db.query(checkSql, [friendId, userId], (err, result) => {
-    if (err) {
-      throw err;
-    }
-    if (result.length === 0) {
-      return res.status(400).send({ message: 'No friend request found.' });
-    }
-     const sql1 = 'DELETE FROM friend_requests WHERE user_id = ? AND friend_id = ?';
-    const sql2 = 'INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)';
-    db.query(sql1, [friendId, userId], (err, result) => {
-      if (err) {
-        throw err;
-      }
-      db.query(sql2, [userId, friendId], (err, result) => {
-        if (err) {
-          throw err;
+      res.json({
+        notifications: results,
+        pagination: {
+          page,
+          per_page: perPage,
+          total_pages: totalPages,
+          total_items: count
         }
-        res.status(200).send({ message: 'Friend request accepted successfully.' });
       });
     });
   });
 });
- // Start Server
-app.listen(3000, () => {
-  console.log('Server started on port 3000.');
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server started on port ${port}`);
 });
+
+
+
+
+
+
+

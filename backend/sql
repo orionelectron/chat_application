@@ -1,11 +1,4 @@
-CREATE TABLE users (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  username VARCHAR(255) NOT NULL,
-  email VARCHAR(255) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  profile_picture_path VARCHAR(255), -- File path of the user's profile picture
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+
 
 
 CREATE TABLE friend_requests (
@@ -15,7 +8,8 @@ CREATE TABLE friend_requests (
   status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (from_user_id) REFERENCES users(id),
-  FOREIGN KEY (to_user_id) REFERENCES users(id)
+  FOREIGN KEY (to_user_id) REFERENCES users(id),
+  UNIQUE KEY (from_user_id, to_user_id)
 );
 
 
@@ -42,56 +36,129 @@ CREATE TABLE message_files (
 
 CREATE TABLE notifications (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
+  from_user INT NOT NULL,
+  to_user INT NOT NULL,
   message TEXT NOT NULL,
+  type ENUM('like', 'comment', 'share', 'friend_request', 'other') DEFAULT 'other',
+  status ENUM('read','unread') DEFAULT 'unread',
+  notification_source INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (from_user) REFERENCES users(id),
+  FOREIGN KEY (to_user) REFERENCES users(id)
+
 );
 
 
 -- User table
 CREATE TABLE users (
-  user_id INT PRIMARY KEY AUTO_INCREMENT,
-  username VARCHAR(50) NOT NULL UNIQUE,
-  email VARCHAR(50) NOT NULL UNIQUE,
-  password VARCHAR(255) NOT NULL
+  id INT NOT NULL AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  gender ENUM('male', 'female', 'other') NOT NULL,
+  birthdate DATE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  profile_picture_path VARCHAR(255)
+  PRIMARY KEY (id),
+  UNIQUE KEY (username),
+  UNIQUE KEY (email)
 );
+
 
 -- Friend table
 CREATE TABLE friends (
   user_id INT NOT NULL,
   friend_id INT NOT NULL,
   PRIMARY KEY (user_id, friend_id),
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (friend_id) REFERENCES users(user_id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (friend_id) REFERENCES users(id)
 );
 
 -- Post table
 CREATE TABLE posts (
-  post_id INT PRIMARY KEY AUTO_INCREMENT,
+  id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,
   content TEXT NOT NULL,
-  photo_url VARCHAR(255),
+  type ENUM('post', 'poll', 'other') NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(user_id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE post_photos(
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  post_id INT NOT NULL,
+  post_photo_url VARCHAR(1000),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+)
+
+CREATE TABLE posts_poll_options (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  post_id INT NOT NULL,
+  option_text TEXT NOT NULL,
+  votes INT DEFAULT 0,
+  FOREIGN KEY (poll_id) REFERENCES polls(id)
+);
+
 
 -- Like table
 CREATE TABLE likes (
   user_id INT NOT NULL,
   post_id INT NOT NULL,
   PRIMARY KEY (user_id, post_id),
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (post_id) REFERENCES posts(post_id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
 -- Comment table
 CREATE TABLE comments (
-  comment_id INT PRIMARY KEY AUTO_INCREMENT,
+  id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,
   post_id INT NOT NULL,
+  comment_photo_path VARCHAR(255),
   content TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (post_id) REFERENCES posts(post_id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
+
+CREATE TABLE parent_child_comment (
+    parent_comment_id INT NOT NULL,
+    child_comment_id INT NOT NULL,
+    FOREIGN KEY (parent_comment_id) REFERENCES comments(id),
+    FOREIGN KEY (child_comment_id) REFERENCES comments(id)
+);
+
+CREATE TABLE polls (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  question TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE poll_options (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  poll_id INT NOT NULL,
+  option_text TEXT NOT NULL,
+  votes INT DEFAULT 0,
+  FOREIGN KEY (poll_id) REFERENCES polls(id)
+);
+
+The query to retrieve all the child comments for comment #3 will be as follows
+
+SELECT *
+FROM
+   Comment AS c
+JOIN parent_child_comment p ON c.comment_id = p.child_comment_id
+WHERE 
+   p.parent_comment_id = 3;
+
+
+The query to retrieve all the parent comments for comment #6 will be as follows
+
+SELECT c.*
+FROM
+   Comment AS c
+JOIN parent_child_comment p ON c.comment_id = p.child_comment_id
+WHERE 
+   p.child_comment_id = 6;
+

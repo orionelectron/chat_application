@@ -575,7 +575,7 @@ function fetch_messages(userId) {
     const options = {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            "Content-type": "application/json; charset=UTF-8"
         },
         body: JSON.stringify(data)
     };
@@ -652,14 +652,7 @@ file_chooser.addEventListener('change', (event) => {
 });
 
 function clear_attachment_view() {
-    let attachment_view_items = document.getElementsByClassName("attachment-view-item");
-    console.log("attachment_view_items ", attachment_view_items);
-    if (attachment_view_items.length <= 0) {
-        return;
-    }
-    for (let i = 0; i < attachment_view_items.length; i++) {
-        attachment_view_items[i].remove();
-    }
+    attachment_view.innerHTML="";
 
 }
 

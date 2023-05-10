@@ -7,6 +7,7 @@
     <title>My Webpage</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 
 <body class="bg-gray-100">
@@ -22,11 +23,35 @@
         <div class="flex items-center justify-center">
             <!-- Search bar -->
             <div class="relative mx-4">
-                <input type="text"
+                <input id="live_search_bar" type="text"
                     class="bg-gray-200 rounded-full pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
                     placeholder="Search">
                 <div class="absolute top-0 left-0 pl-3 py-2">
                     <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <div id="live_search_container"
+                    class="absolute hidden bg-white w-80  h-80 p-1 rounded-md top-12  z-10 flex flex-col gap-2  ">
+                    <div id="live_search_container_heading flex-col gap-2 ">
+                        <div class="w-full bg-blue-500 text-white font-bold py-2 px-4 flex justify-between rounded">
+                            <p>Search Results</p>
+                        </div>
+                       
+
+                    </div>
+                    <div id="live_search_content_container"
+                        class=" mt-2 overflow-auto py-2 flex flex-col gap-2  bg-white rounded-lg shadow-sm">
+
+
+                    </div>
+                    <div class="w-full hover:cursor-pointer text-center bg-blue-500 text-white font-bold py-2 px-4  rounded-md">
+                        Show All Results
+                    </div>
+                    <div onclick="close_live_search_container()" class="w-full text-center hover:cursor-pointer bg-red-500 text-white font-bold py-2 px-4  rounded-md">
+                        Clear Results
+                    </div>
+
+
+
                 </div>
             </div>
 
@@ -37,7 +62,7 @@
                     <i onclick="toggle_notification_container()" class=" fa-bell fa-solid fa-2xl  hover:cursor-pointer "
                         style="color: #005eff;"></i>
                     <span onclick="toggle_notification_container()"
-                        class="absolute top-0 right-0  px-2 py-1 translate-x-2/3 translate-y-1/2 bg-red-500 border border-white rounded-full text-xs text-white">12</span>
+                        class="absolute top-0 right-0  px-2 py-1 translate-x-2/3 translate-y-1/2 bg-red-500 border border-white rounded-full text-xs text-white">0</span>
                     <div id="notification_container"
                         class="absolute hidden bg-white w-80  h-80 p-1 rounded-md top-10 z-10 flex flex-col gap-2 right-2 ">
                         <div id="notification_container_heading flex-col gap-2 ">
@@ -73,7 +98,7 @@
                     <i onclick="toggle_message_container()" class="fa-solid fa-2xl  hover:cursor-pointer fa-envelope"
                         style="color: #005eff;"></i>
                     <span onclick="toggle_message_container()"
-                        class="absolute top-0 right-0  px-2 py-1 translate-x-2/3 translate-y-1/2 bg-red-500 border border-white rounded-full text-xs text-white">12</span>
+                        class="absolute top-0 right-0  px-2 py-1 translate-x-2/3 translate-y-1/2 bg-red-500 border border-white rounded-full text-xs text-white">0</span>
                     <div id="message_container"
                         class="absolute hidden bg-white w-80  h-80 p-1 rounded-md top-20 z-10 flex flex-col gap-2 right-2 ">
                         <div id="message_container_heading flex-col gap-2 ">
@@ -94,7 +119,8 @@
 
 
                         </div>
-                        <div onclick="open_messenger()" class="w-full hover:cursor-pointer bg-blue-500 text-white font-bold py-2 px-4  rounded-md">
+                        <div onclick="open_messenger()"
+                            class="w-full hover:cursor-pointer bg-blue-500 text-white font-bold py-2 px-4  rounded-md">
                             <a href="./chat.html">Show All Messages</a>
                         </div>
 
@@ -121,7 +147,7 @@
     <main class="flex mt-8 gap-1">
         <!-- Left side -->
         <div id="top_places_container" class="basis-2/6 flex flex-col gap-2 items-center px-4">
-            
+
         </div>
 
         <!-- Middle side -->
@@ -130,32 +156,44 @@
             <!-- Post form -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div class="p-4">
-                    <form>
+                    <div>
                         <div class="mb-4">
-                            <textarea class="form-textarea block w-full border-2 border-gray-200 p-2 rounded-md"
-                                rows="3" placeholder="What's on your mind?"></textarea>
+                            <textarea id="post_content_input"
+                                class="form-textarea block w-full border-2 border-gray-200 p-2 rounded-md" rows="3"
+                                placeholder="What's on your mind?"></textarea>
                         </div>
                         <div class="mb-4">
+                            <div id="attachment_view"
+                                class=" flex flex-row gap-2 mb-2 bg-gray-200 relative hidden basis-2/6 rounded-md overflow-y-scroll">
+                                <div id="close_attachment_view" onclick="close_post_attachment_view()"
+                                    class="absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
+                                </div>
+
+
+                            </div>
                             <div class="flex justify-between items-center mb-2">
 
-                                <p class="text-sm text-gray-600">Attach a photo or video:</p>
+                                <p class="text-sm text-gray-600">Attach a photo :</p>
                                 <p class="text-xs text-gray-400">(max 5 files)</p>
                             </div>
                             <div class="border-dashed border-2 border-gray-200 rounded-md py-2 px-4">
+
                                 <div class="flex items-center justify-center">
-                                    <input id="file-chooser" type="file" class="hidden"> </input>
+                                    <input type="hidden" name="user_id" id="user_id" , value="<%= user_id %>">
+                                    <input type="hidden" name="token" id="token" , value="<%= token %>">
+                                    <input id="post_file_chooser" type="file" class="hidden"> </input>
                                     <i class="fa-solid fa-xl pr-2 fa-image  hover:cursor-pointer"
-                                        onclick="open_attachment_view()" style="color: #005eff;"></i>
+                                        onclick="open_post_attachment_view()" style="color: #005eff;"></i>
                                     <p class="text-sm text-gray-400">Choose files or drag and drop here</p>
                                 </div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <button
+                            <button id="post_send_button" onclick="send_post()"
                                 class="bg-blue-500 w-full hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Post</button>
 
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
 
@@ -218,45 +256,7 @@
             </div>
 
             <!-- Poll section -->
-            <div class="p-4 bg-white rounded-lg shadow-md flex flex-col gap-2">
-                <div class="flex space-x-4">
-                    <div class="flex-shrink-0">
-                        <img class="h-12 w-12 rounded-full object-cover" src="https://picsum.photos/200">
-                    </div>
-                    <div class="flex-grow">
-                        <p class="text-gray-700 font-bold">John Doe</p>
-                        <p class="text-gray-600">2 hours ago</p>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <button class="text-gray-600 hover:text-gray-800">
-                            <i class="fas fa-ellipsis-h"></i>
-                        </button>
-                    </div>
-                </div>
-                <h2 class="text-lg font-medium mb-4">What's your favorite color?</h2>
-                <form class="space-y-2">
-                    <div class="flex items-center  gap-3">
-                        <input id="color1" type="radio" name="color"
-                            class="appearance-none h-4 w-4 border border-gray-300 rounded-full checked:bg-blue-500 checked:border-transparent focus:outline-none">
-                        <label for="color1" class="text-gray-700">Blue</label> 
-                        <p class="text-blue-600 font-bold"> 75% voted for this</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input id="color2" type="radio" name="color"
-                            class="appearance-none h-4 w-4 border border-gray-300 rounded-full checked:bg-red-500 checked:border-transparent focus:outline-none">
-                        <label for="color2" class="text-gray-700 ">Red</label>
-                        <p class=" text-blue-600  font-bold"> 25% voted for this</p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <input type="text"
-                            class="basis-4/6 w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:border-blue-500"
-                            placeholder="Add poll option">
-                        <button
-                            class="basis-2/6 bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg ml-2">Add
-                            option</button>
-                    </div>
-                </form>
-            </div>
+
 
         </div>
         <!-- Right side -->
