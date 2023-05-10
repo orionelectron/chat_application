@@ -315,8 +315,23 @@ app.get('/friends', requireAuth, (req, res) => {
     });
 });
 
-app.get("/news_feed_data/user/:id", (req, res) => {
+app.get("/newsfeed_data", async (req, res) => {
+    const { id, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    let transactions = [{
+        id: "newsfeed_data",
+        query: `SELECT * FROM posts INNER JOIN post_photos on posts.id = post_photos.post_id WHERE posts.user_id IN  (SELECT 
+            CASE
+                WHEN user_id = ? THEN friend_id
+                ELSE user_id
+            END AS friend_id
+        FROM friends
+        WHERE user_id = ? OR friend_id = ? ) ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        parameters: [id, id, id, limit, offset]
 
+    }];
+    let results = await executeTransactions(transactions);
+    res.json(results["newsfeed_data"].result);
 })
 
 app.get('/photos/:photoName', (req, res) => {

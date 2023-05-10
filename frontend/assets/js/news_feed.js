@@ -22,6 +22,7 @@ let live_search_list = [];
 let friend_request_list = [];
 let notifications_list = [
 ];
+let newsfeed_list = [];
 
 let top_places_list = [
     {
@@ -166,7 +167,7 @@ function render_notifications_list() {
         });
         //console.log("template", friend_template);
         final_html = final_html + final_template;
-        
+
     }
     notification_content_container.innerHTML = final_html;
 }
@@ -652,9 +653,28 @@ function fetch_notifications() {
             console.log(error);
         });
 }
-fetch_notifications();
-function render_posts_container() {
+function fetch_newsfeed_data() {
+    axios.get('https://192.168.1.187:3000/newsfeed_data', {
+        params: {
+            id: user_id,
+            page: 1,
+            limit: 50
+        }
+    })
+        .then(function (response) {
+            console.log(response.data);
+            newsfeed_list = response.data;
+            render_posts_container();
 
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+fetch_notifications();
+fetch_newsfeed_data();
+function render_posts_container() {
+    
 }
 
 function send_friend_request(id) {
