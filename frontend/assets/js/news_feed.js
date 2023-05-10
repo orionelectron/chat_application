@@ -21,7 +21,7 @@ let live_search_list = [];
 
 let friend_request_list = [];
 let notifications_list = [
-    ];
+];
 
 let top_places_list = [
     {
@@ -57,7 +57,7 @@ let top_places_list = [
 let messages_list = [];
 function timeAgo(timestamp) {
     const now = new Date();
-    const posted = new Date(timestamp * 1000);
+    const posted = Date.parse(timestamp);
     const elapsed = (now - posted) / 1000; // Time elapsed in seconds
 
     if (elapsed < 60) {
@@ -141,10 +141,10 @@ function render_notifications_list() {
     </div>
     <div class="basis-4/6 text-sm font-medium mx-2">
         <p class="text-black">{username}</p>
-        <p class="text-gray-500">{notification_message}</p>
+        <p class="text-gray-500">{message}</p>
     </div>
     <div class="basis-1/6 text-sm text-gray-500">
-        <p>{time_ago}</p>
+        <p>{created_at}</p>
     </div>
 </a>
     `;
@@ -154,8 +154,9 @@ function render_notifications_list() {
         let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
 
 
-            if (key === "time_ago") {
-                return timeAgo(notification.timestamp);
+            if (key === "created_at") {
+                console.log(notification.created_at)
+                return timeAgo(notification.created_at);
             }
             else {
                 return notification[key] || "";
@@ -165,6 +166,7 @@ function render_notifications_list() {
         });
         //console.log("template", friend_template);
         final_html = final_html + final_template;
+        
     }
     notification_content_container.innerHTML = final_html;
 }
@@ -245,8 +247,8 @@ function render_friend_request_list() {
             if (key === "time_ago") {
                 return timeAgo(friend_request.timestamp);
             }
-            else if(key == "profile_picture_path"){
-               return "https://source.unsplash.com/random"
+            else if (key == "profile_picture_path") {
+                return "https://source.unsplash.com/random"
             }
             else {
                 return friend_request[key] || "";
@@ -259,18 +261,18 @@ function render_friend_request_list() {
     }
     friend_request_container.innerHTML = final_html;
 }
-function get_friend_request(friend_request_id){
-    
-    for(let i=0;i<friend_request_list.length; i++){
-        if(friend_request_list[i].friend_request_id == friend_request_id){
-            
+function get_friend_request(friend_request_id) {
+
+    for (let i = 0; i < friend_request_list.length; i++) {
+        if (friend_request_list[i].friend_request_id == friend_request_id) {
+
             return friend_request_list[i];
         }
     }
-    
-    
+
+
 }
-function accept_friend_request(friend_request_id){
+function accept_friend_request(friend_request_id) {
     console.log("Accepted friend request", friend_request_id);
     let friend_request = get_friend_request(friend_request_id);
     console.log(friend_request)
@@ -281,17 +283,17 @@ function accept_friend_request(friend_request_id){
             friend_request_id
 
         }
-        
+
     })
         .then(function (response) {
             console.log(response.data);
-            
+
         })
         .catch(function (error) {
             console.log(error);
         });
 }
-function reject_friend_request(friend_request_id){
+function reject_friend_request(friend_request_id) {
     console.log("Rejected friend request", friend_request_id);
     let friend_request = get_friend_request(friend_request_id);
     console.log(friend_request)
@@ -305,7 +307,7 @@ function reject_friend_request(friend_request_id){
     })
         .then(function (response) {
             console.log(response.data);
-            
+
         })
         .catch(function (error) {
             console.log(error);
@@ -616,11 +618,11 @@ function close_message_container() {
 }
 function fetch_friend_requests() {
     axios.get('https://192.168.1.187:3000/friend_requests', {
-    params: {
-       id:  user_id,
-       page: 1,
-       limit: 10
-    }
+        params: {
+            id: user_id,
+            page: 1,
+            limit: 10
+        }
     })
         .then(function (response) {
             console.log(response.data);
@@ -632,6 +634,25 @@ function fetch_friend_requests() {
             console.log(error);
         });
 }
+function fetch_notifications() {
+    axios.get('https://192.168.1.187:3000/notifications', {
+        params: {
+            id: user_id,
+            page: 1,
+            limit: 50
+        }
+    })
+        .then(function (response) {
+            console.log(response.data);
+            notifications_list = response.data;
+            render_notifications_list();
+
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}
+fetch_notifications();
 function render_posts_container() {
 
 }

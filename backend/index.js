@@ -291,7 +291,7 @@ app.get('/friends', requireAuth, (req, res) => {
 
     // TODO: Query the database to get the list of friends for the current user
     // For example, assuming you have a User model in Mongoose:
-    const id =  req.session.user_id;
+    const id = req.session.user_id;
     console.log("user id", id)
     const sql = 'select * from friends INNER JOIN users on friends.friend_id = users.id where friends.friend_id  = ?';
     pool.query(sql, [id], (err, result) => {
@@ -377,7 +377,7 @@ app.get('/friend_requests/reject', async (req, res) => {
     let results = await executeTransactions(transactions);
     console.log(results, "results reject")
     res.json(results);
-    
+
 });
 app.get('/friend_requests', async (req, res) => {
     console.log(req.query);
@@ -405,6 +405,26 @@ app.get('/friend_requests', async (req, res) => {
     }
 
 });
+
+app.get('/notifications', async (req, res) => {
+    let { id, page, limit } = req.query;
+    id = parseInt(id);
+    page = parseInt(page);
+    limit = parseInt(limit);
+    console.log('notifications', id, page, limit)
+    const offset = (page - 1) * limit;
+    let transactions = [
+        {
+            id: "notifications",
+            query: `SELECT * FROM notifications INNER JOIN users on notifications.from_user = users.id WHERE status = 'unread' and to_user = ? LIMIT ? OFFSET ?; `,
+            parameters: [id, limit, offset]
+        }
+
+
+    ];
+    let results = await executeTransactions(transactions);
+    res.json(results["notifications"].result);
+})
 
 app.post('/friend_requests', async (req, res) => {
     const { to_user_id, from_user_id } = req.body
@@ -602,57 +622,83 @@ function create_conversation_id(userId, otherUserId) {
 }
 function getConnectionFromPool() {
     return new Promise((resolve, reject) => {
-      pool.getConnection((err, connection) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(connection);
-      });
+        pool.getConnection((err, connection) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(connection);
+        });
     });
-  }
- async function executeTransactions(queries) {/*arr of  id, query, parameters */
-  
-    return new Promise(async (resolve, reject) => {
-        let connection = await getConnectionFromPool();
-        try {
-            let results = {};
-            connection.beginTransaction((beginTransactionError) => {
-                if (beginTransactionError !== null) {
-                    reject(beginTransactionError.message);
-                }
-                // Loop through all queries
-                for (const query of queries) {
-                    pool.query(query.query, query.parameters, (queryError , queryResults, fields) => {
-                        // If the query errored, then rollback and reject
-                        if (queryError !== null) {
-                            // Try catch the rollback end reject if the rollback fails
-                            try {
-                                pool.rollback((rollbackError) => {
-                                    reject(rollbackError.message);
-                                });
-                            } catch (rollbackError) {
-                                reject(rollbackError.message);
-                            }
-                        }
-                        //console.log(queryResults)
-                        // Push the result into an array and index it with the ID passed for searching later
-                        results[query.id] = {
-                            result: queryResults,
-                            fields: fields,
-                        };
-                    });
-                }
-                // If all loops have itterated and no errors, then commit
-                connection.commit((commitError) => {
-                    if (commitError !== null) {
-                        reject(commitError.message);
-                    }
-                    resolve(results);
-                });
-            });
-        } catch (error) {
-            reject(error);
+}
+async function executeTransactions(queries) {
+    let connection;
+    try {
+        connection = await getConnectionFromPool();
+        await startTransaction(connection);
+
+        const results = {};
+
+        for (const query of queries) {
+            const queryResult = await executeQuery(connection, query.query, query.parameters);
+            results[query.id] = {
+                result: queryResult.result,
+                fields: queryResult.fields,
+            };
         }
+
+        await commitTransaction(connection);
+        return results;
+    } catch (error) {
+        await rollbackTransaction(connection);
+        throw error;
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+}
+
+function startTransaction(connection) {
+    return new Promise((resolve, reject) => {
+        connection.beginTransaction((err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+function executeQuery(connection, query, parameters) {
+    return new Promise((resolve, reject) => {
+        connection.query(query, parameters, (err, result, fields) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve({ result, fields });
+            }
+        });
+    });
+}
+
+function commitTransaction(connection) {
+    return new Promise((resolve, reject) => {
+        connection.commit((err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+function rollbackTransaction(connection) {
+    return new Promise((resolve, reject) => {
+        connection.rollback(() => {
+            resolve();
+        });
     });
 }
