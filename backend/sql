@@ -157,6 +157,7 @@ FROM
 WHERE
   p.child_comment_id = 6;
 
+query to get newsfeed posts for a user
 SELECT
   p.id AS post_id,
   p.created_at AS created_at,
@@ -193,5 +194,44 @@ GROUP BY
   p.content
 ORDER BY
   P.created_at DESC
+LIMIT
+  10 OFFSET 0;
+
+you could use this too
+
+
+
+SELECT
+  p.id AS post_id,
+  p.created_at AS created_at,
+  u.username AS username,
+  u.id AS user_id,
+  u.profile_picture_path AS profile_picture_path,
+  COUNT(DISTINCT l.post_id) AS likes_count,
+  COUNT(DISTINCT c.post_id) AS comment_count,
+  GROUP_CONCAT(DISTINCT ph.post_photo_url) AS post_photo_urls,
+  p.content AS post_content
+FROM
+  posts p
+  JOIN users u ON p.user_id = u.id
+  LEFT JOIN likes l ON p.id = l.post_id
+  LEFT JOIN comments c ON p.id = c.post_id
+  LEFT JOIN post_photos ph ON p.id = ph.post_id
+  LEFT JOIN friends f ON (
+    p.user_id = f.user_id
+    OR p.user_id = f.friend_id
+  )
+WHERE
+  (
+    f.user_id = 6
+    OR f.friend_id = 6
+  )
+GROUP BY
+  p.id,
+  u.username,
+  u.profile_picture_path,
+  p.content
+ORDER BY
+  p.created_at DESC
 LIMIT
   10 OFFSET 0;

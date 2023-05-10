@@ -11,6 +11,7 @@ let post_content_input = document.getElementById("post_content_input");
 let live_search_bar = document.getElementById("live_search_bar");
 let live_search_container = document.getElementById("live_search_container");
 let live_search_content_container = document.getElementById("live_search_content_container");
+let newsfeed_container = document.getElementById("newsfeed_container");
 const user_id = document.getElementById('user_id').value || 123;
 const token = document.getElementById('token').value || '1234';
 
@@ -362,7 +363,9 @@ function clear_attachment_view() {
 
 }
 function render_attachment_view() {
-    clear_attachment_view();
+    console.log("rendering attachment_view")
+    //clear_attachment_view();
+    let final_html = '';
     let file_template = `<div
     class=" attachment-view-item relative p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
     <i class="fa-solid fa-file fa-xl hover:cursor-pointer" style="color: #025cf7;"></i>
@@ -394,7 +397,7 @@ class="attachment-view-item relative  p-2 w-20 inline-block h-full bg-gray-400 r
 
 
             });
-            attachment_view.innerHTML = attachment_view.innerHTML + final_template;
+           final_html = final_html + final_template;
 
 
         }
@@ -405,9 +408,13 @@ class="attachment-view-item relative  p-2 w-20 inline-block h-full bg-gray-400 r
                     return file_name;
                 }
             });
-            attachment_view.innerHTML = attachment_view.innerHTML + final_template;
+            final_html = final_html + final_template;
+
+           
         }
     });
+    //let attachment_view = document.getElementById("attachment_view")
+    attachment_view.innerHTML = final_html;
 
 }
 function remove_from_attachment_list(input_file_name) {
@@ -424,13 +431,15 @@ function remove_from_attachment_list(input_file_name) {
 
 }
 function open_post_attachment_view() {
-    if (attachment_view.classList.contains('hidden'))
-        attachment_view.classList.remove('hidden');
+    console.log("opended_attachment_view")
+    //document.getElementById("attachment_view").classList.add('hidden');
+    attachment_view.classList.remove('hidden');
     post_file_chooser.click();
 }
 function close_post_attachment_view() {
-    if (!attachment_view.classList.contains('hidden'))
-        attachment_view.classList.add('hidden');
+    console.log("closed_attachment_view")
+    document.getElementById("attachment_view").classList.add('hidden');
+    attachment_view.classList.add('hidden');
 }
 post_file_chooser.addEventListener('change', (event) => {
     const files = Array.from(event.target.files);
@@ -500,6 +509,7 @@ function search_for_users(param) {
 }
 
 function send_post() {
+     post_content_input = document.getElementById("post_content_input")
     let data = {
         user_id,
         content: post_content_input.value || "",
@@ -664,7 +674,7 @@ function fetch_newsfeed_data() {
         .then(function (response) {
             console.log(response.data);
             newsfeed_list = response.data;
-            render_posts_container();
+            render_newsfeed_container();
 
         })
         .catch(function (error) {
@@ -673,8 +683,100 @@ function fetch_newsfeed_data() {
 }
 fetch_notifications();
 fetch_newsfeed_data();
-function render_posts_container() {
-    
+
+function get_photo_grid(post_photo_urls) {
+    if (!post_photo_urls)
+        return ""
+    console.log(post_photo_urls)
+    let photo_urls = post_photo_urls.split(',').map(url => url.trim());
+    let final_html = '';
+    let template = `<img class="w-full h-full object-cover" src="{post_photo_url}.png">`
+    for (let i = 0; i < photo_urls.length; i++) {
+        let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+            if (key == 'post_photo_url')
+                return photo_urls[i];
+
+
+        });
+        final_html = final_html + final_template;
+    }
+    return final_html;
+}
+function render_newsfeed_container() {
+    final_html = '';
+    let template = `
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="p-4">
+        <div class="flex space-x-4">
+            <div class="flex-shrink-0">
+            <img class="h-12 w-12 rounded-full object-cover" src="{profile_picture_path}"></img>
+            </div>
+            <div class="flex-grow">
+                <p class="text-gray-700 font-bold">{username}</p>
+                <p class="text-gray-600">{created_at}</p>
+            </div>
+            <div class="flex-shrink-0">
+                <button class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+        </div>
+        <div class="my-2">
+            <p class="text-gray-800 font-medium">{post_content}</p>
+        </div>
+        <div class="my-4 w-full h-80 grid grid-cols-2 gap-4">
+           {photo_grid}
+        </div>
+        
+        <div class="flex justify-between my-4">
+            <div class="flex items-center space-x-2">
+                <button class="text-gray-600 hover:text-blue-600">
+                    <i class="far fa-thumbs-up"></i>
+                </button>
+                <p class="text-gray-600">{likes_count} likes</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="text-gray-600 hover:text-blue-600">
+                    <i class="far fa-comment"></i>
+                </button>
+                <p class="text-gray-600">{comment_count} comments</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="text-gray-600 hover:text-blue-600">
+                    <i class="far fa-share-square"></i>
+                </button>
+                <p class="text-gray-600">10 shares</p>
+            </div>
+        </div>
+        <div class="flex justify-between">
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
+                Like
+            </button>
+            <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full">
+                Comment
+            </button>
+            <button class="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-full">
+                Share
+            </button>
+        </div>
+    </div>
+</div>
+    `;
+    for (let i = 0; i < newsfeed_list.length; i++) {
+        let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+            // console.log(newsfeed_list[i])
+
+            if (key == 'photo_grid')
+                return get_photo_grid(newsfeed_list[i].post_photo_urls);
+            else
+                return newsfeed_list[i][key]
+
+
+        });
+        final_html = final_html + final_template;
+    }
+    newsfeed_container.innerHTML = final_html;
 }
 
 function send_friend_request(id) {
@@ -693,4 +795,5 @@ function send_friend_request(id) {
 }
 fetch_friend_requests();
 render_top_places_list();
-render_friend_request_list();
+//render_friend_request_list();
+render_newsfeed_container();

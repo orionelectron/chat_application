@@ -17,7 +17,7 @@ let conversations = [];
 
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.json({ limit: '50mb' }));
-
+app.use('/photos', express.static('./uploads'));
 const httpPort = 8080;
 const httpsPort = 3000;
 
@@ -320,37 +320,71 @@ app.get("/newsfeed_data", async (req, res) => {
     const offset = (page - 1) * limit;
     let transactions = [{
         id: "newsfeed_data",
-        query: `SELECT * FROM posts INNER JOIN post_photos on posts.id = post_photos.post_id WHERE posts.user_id IN  (SELECT 
-            CASE
-                WHEN user_id = ? THEN friend_id
-                ELSE user_id
-            END AS friend_id
-        FROM friends
-        WHERE user_id = ? OR friend_id = ? ) ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        parameters: [id, id, id, limit, offset]
+        query: `SELECT
+        p.id AS post_id,
+        p.created_at AS created_at,
+        u.username AS username,
+        u.id AS user_id,
+        u.profile_picture_path AS profile_picture_path,
+        COUNT(DISTINCT l.post_id) AS likes_count,
+        COUNT(DISTINCT c.post_id) AS comment_count,
+        GROUP_CONCAT(DISTINCT ph.post_photo_url) AS post_photo_urls,
+        p.content AS post_content
+      FROM
+        posts p
+        JOIN users u ON p.user_id = u.id
+        LEFT JOIN likes l ON p.id = l.post_id
+        LEFT JOIN comments c ON p.id = c.post_id
+        LEFT JOIN post_photos ph ON p.id = ph.post_id
+        LEFT JOIN friends f ON (
+          p.user_id = f.user_id
+          OR p.user_id = f.friend_id
+        )
+      WHERE
+        (
+          f.user_id = ?
+          OR f.friend_id = ?
+        )
+      GROUP BY
+        p.id,
+        u.username,
+        u.profile_picture_path,
+        p.content
+      ORDER BY
+        p.created_at DESC
+      LIMIT
+        ? OFFSET ?;`,
+        parameters: [id, id, 10, offset]
 
     }];
     let results = await executeTransactions(transactions);
     res.json(results["newsfeed_data"].result);
 })
-
+/*
 app.get('/photos/:photoName', (req, res) => {
     const photoName = req.params.photoName;
-    const filePath = path.join(__dirname, 'uploads', photoName);
-
-    fs.readFile(filePath, (err, data) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send({ error: 'Failed to retrieve photo' });
-        } else {
-            const fileData = Buffer.from(data).toString('base64');
-            const fileType = path.extname(filePath).substr(1);
-
-            const dataUri = `data:${fileType};base64,${fileData}`;
-            res.send({ dataUri });
-        }
-    });
+    //const filePath = path.join(__dirname, 'uploads', photoName);
+    let filePath = './uploads/' + photoName;
+    try{
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send({ error: 'Failed to retrieve photo' });
+            } else {
+                const fileData = Buffer.from(data).toString('base64');
+                const fileType = path.extname(filePath).substr(1);
+    
+                const dataUri = `data:${fileType};base64,${fileData}`;
+                res.send({ dataUri });
+            }
+        });
+    }
+    catch(error){
+        console.log(error);
+    }
+    
 });
+*/
 app.get('/friend_requests/accept', async (req, res) => {
     const { friend_request_id, from_user, to_user } = req.query;
     console.log(req.query)

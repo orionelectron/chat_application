@@ -35,7 +35,7 @@
                         <div class="w-full bg-blue-500 text-white font-bold py-2 px-4 flex justify-between rounded">
                             <p>Search Results</p>
                         </div>
-                       
+
 
                     </div>
                     <div id="live_search_content_container"
@@ -43,10 +43,12 @@
 
 
                     </div>
-                    <div class="w-full hover:cursor-pointer text-center bg-blue-500 text-white font-bold py-2 px-4  rounded-md">
+                    <div
+                        class="w-full hover:cursor-pointer text-center bg-blue-500 text-white font-bold py-2 px-4  rounded-md">
                         Show All Results
                     </div>
-                    <div onclick="close_live_search_container()" class="w-full text-center hover:cursor-pointer bg-red-500 text-white font-bold py-2 px-4  rounded-md">
+                    <div onclick="close_live_search_container()"
+                        class="w-full text-center hover:cursor-pointer bg-red-500 text-white font-bold py-2 px-4  rounded-md">
                         Clear Results
                     </div>
 
@@ -152,7 +154,7 @@
 
         <!-- Middle side -->
 
-        <div class="basis-3/6 px-4 flex flex-col gap-2">
+        <div  class="basis-3/6 px-4 flex flex-col gap-2">
             <!-- Post form -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div class="p-4">
@@ -164,7 +166,7 @@
                         </div>
                         <div class="mb-4">
                             <div id="attachment_view"
-                                class=" flex flex-row gap-2 mb-2 bg-gray-200 relative hidden basis-2/6 rounded-md overflow-y-scroll">
+                                class="hidden h-20 flex flex-row gap-2 mb-2 bg-gray-200 relative  basis-2/6 rounded-md overflow-y-scroll">
                                 <div id="close_attachment_view" onclick="close_post_attachment_view()"
                                     class="absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
                                 </div>
@@ -198,62 +200,67 @@
             </div>
 
             <!-- Post section -->
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="p-4">
-                    <div class="flex space-x-4">
-                        <div class="flex-shrink-0">
-                            <img class="h-12 w-12 rounded-full object-cover" src="https://picsum.photos/200">
+            <div id="newsfeed_container">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="p-4">
+                        <div class="flex space-x-4">
+                            <div class="flex-shrink-0">
+                                <img class="h-12 w-12 rounded-full object-cover" src="https://picsum.photos/200">
+                            </div>
+                            <div class="flex-grow">
+                                <p class="text-gray-700 font-bold">John Doe</p>
+                                <p class="text-gray-600">2 hours ago</p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <button class="text-gray-600 hover:text-gray-800">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex-grow">
-                            <p class="text-gray-700 font-bold">John Doe</p>
-                            <p class="text-gray-600">2 hours ago</p>
+                        <div class="my-4">
+                            <img class="w-full" src="https://picsum.photos/600/400">
                         </div>
-                        <div class="flex-shrink-0">
-                            <button class="text-gray-600 hover:text-gray-800">
-                                <i class="fas fa-ellipsis-h"></i>
+                        <div class="my-2">
+                            <p class="text-gray-800 font-medium">Lorem ipsum dolor sit amet consectetur adipiscing elit,
+                                sed
+                                do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                        </div>
+                        <div class="flex justify-between my-4">
+                            <div class="flex items-center space-x-2">
+                                <button class="text-gray-600 hover:text-blue-600">
+                                    <i class="far fa-thumbs-up"></i>
+                                </button>
+                                <p class="text-gray-600">100 likes</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="text-gray-600 hover:text-blue-600">
+                                    <i class="far fa-comment"></i>
+                                </button>
+                                <p class="text-gray-600">50 comments</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="text-gray-600 hover:text-blue-600">
+                                    <i class="far fa-share-square"></i>
+                                </button>
+                                <p class="text-gray-600">10 shares</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between">
+                            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
+                                Like
+                            </button>
+                            <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full">
+                                Comment
+                            </button>
+                            <button
+                                class="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-full">
+                                Share
                             </button>
                         </div>
-                    </div>
-                    <div class="my-4">
-                        <img class="w-full" src="https://picsum.photos/600/400">
-                    </div>
-                    <div class="my-2">
-                        <p class="text-gray-800 font-medium">Lorem ipsum dolor sit amet consectetur adipiscing elit, sed
-                            do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                    </div>
-                    <div class="flex justify-between my-4">
-                        <div class="flex items-center space-x-2">
-                            <button class="text-gray-600 hover:text-blue-600">
-                                <i class="far fa-thumbs-up"></i>
-                            </button>
-                            <p class="text-gray-600">100 likes</p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button class="text-gray-600 hover:text-blue-600">
-                                <i class="far fa-comment"></i>
-                            </button>
-                            <p class="text-gray-600">50 comments</p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button class="text-gray-600 hover:text-blue-600">
-                                <i class="far fa-share-square"></i>
-                            </button>
-                            <p class="text-gray-600">10 shares</p>
-                        </div>
-                    </div>
-                    <div class="flex justify-between">
-                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
-                            Like
-                        </button>
-                        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full">
-                            Comment
-                        </button>
-                        <button class="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-full">
-                            Share
-                        </button>
                     </div>
                 </div>
             </div>
+
 
             <!-- Poll section -->
 
