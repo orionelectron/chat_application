@@ -283,7 +283,7 @@ app.post('/posts', async (req, res) => {
 
 });
 
-app.get('/friends', requireAuth, (req, res) => {
+app.get('/friends', (req, res) => {
     // Get the current user's username from the session
     console.log(req.body);
     const currentUser = req.session.user_id;
@@ -291,7 +291,7 @@ app.get('/friends', requireAuth, (req, res) => {
 
     // TODO: Query the database to get the list of friends for the current user
     // For example, assuming you have a User model in Mongoose:
-    const id = req.session.user_id;
+    const {id }= req.query
     console.log("user id", id)
     const sql = 'select * from friends INNER JOIN users on friends.friend_id = users.id where friends.friend_id  = ?';
     pool.query(sql, [id], (err, result) => {
@@ -304,7 +304,7 @@ app.get('/friends', requireAuth, (req, res) => {
                 username: result[i].username,
                 id: result[i].id,
                 photo_picture_path: "https://picsum.photos/300/300",
-                last_active: 20,
+                timestamp: 20333333333,
                 isOnline: false
             });
         }
@@ -499,7 +499,13 @@ app.post('/friend_requests', async (req, res) => {
     }
 })
 
+app.post('/posts/like', (req, res) => {
 
+});
+
+app.post('/posts/comment', (req, res) => {
+
+})
 
 
 

@@ -21,8 +21,7 @@ let post_attachment_list = [];
 let live_search_list = [];
 
 let friend_request_list = [];
-let notifications_list = [
-];
+let notifications_list = [];
 let newsfeed_list = [];
 
 let top_places_list = [

@@ -15,63 +15,34 @@
 </head>
 
 <body>
-  <div class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="bg-white p-10 rounded-lg shadow-lg">
-      <h2 class="text-3xl font-bold mb-6">Sign Up</h2>
-      <form>
-        <div class="mb-4">
-          <label class="block font-bold mb-2" for="username">
-            Username
-          </label>
-          <input
-            class="w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            id="username" name="username" type="text" required />
-        </div>
-        <div class="mb-4">
-          <label class="block font-bold mb-2" for="email">
-            Email
-          </label>
-          <input
-            class="w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            id="email" name="email" type="email" required />
-        </div>
-        <div class="mb-4">
-          <label class="block font-bold mb-2" for="password">
-            Password
-          </label>
-          <input
-            class="w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            id="password" name="password" type="password" required />
-        </div>
-        <div class="mb-4">
-          <label class="block font-bold mb-2" for="gender">
-            Gender
-          </label>
-          <select
-            class="w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            id="gender" name="gender" required>
-            <option value="" selected disabled>Select your gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div class="mb-4">
-          <label class="block font-bold mb-2" for="birthdate">
-            Birthdate
-          </label>
-          <input
-            class="w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            id="birthdate" name="birthdate" type="date" required />
-        </div>
-        <button
-          class="bg-indigo-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hover:bg-indigo-600"
-          type="submit">
-          Sign Up
-        </button>
-      </form>
+  <<div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+    <div class="flex items-center space-x-4">
+      <img class="h-16 w-16 rounded-full object-cover" src="{profile_photo_url}" alt="Profile Photo">
+      <div>
+        <h1 class="text-2xl font-bold">{username}</h1>
+        <p class="text-gray-600">{bio}</p>
+      </div>
+    </div>
+    <div class="mt-4">
+      <h2 class="text-lg font-semibold">Friends</h2>
+      <ul class="mt-2 space-y-2">
+        {#each friends as friend}
+        <li class="flex items-center space-x-4">
+          <img class="h-12 w-12 rounded-full object-cover" src="{friend.profile_photo_url}" alt="Friend Photo">
+          <div>
+            <p class="text-lg font-medium">{friend.username}</p>
+            <p class="text-gray-600">{friend.bio}</p>
+          </div>
+          <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full">
+            Unfriend
+          </button>
+        </li>
+        {/each}
+      </ul>
     </div>
   </div>
+  
+   
 
 
 </body>

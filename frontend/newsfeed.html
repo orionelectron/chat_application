@@ -154,7 +154,7 @@
 
         <!-- Middle side -->
 
-        <div  class="basis-3/6 px-4 flex flex-col gap-2">
+        <div class="basis-3/6 px-4 flex flex-col gap-2">
             <!-- Post form -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div class="p-4">
@@ -340,54 +340,39 @@
             </div>
 
 
-            <div id="friendlist-section"
-                class="bg-white overflow-auto h-90 justify-start basis-1/4 p-1 flex flex-col  gap-3 shadow-md">
+            <div class="bg-white overflow-auto h-90 justify-start basis-1/4 p-1 flex flex-col  gap-3 shadow-md">
 
                 <div class="flex justify-center p-4">
                     <h1 class="font-bold"> Friends List </h1>
                 </div>
-
-
-                <div onclick="select_friend({id})"
-                    class="friend-item flex hover:bg-gray-300 items-center hover:cursor-pointer  rounded-md  items-center flex-row">
-                    <div class="user-photo-round-small relative w-16 h-16 mr-4">
-                        <img class="rounded-full border w-16 h-16 border-gray-100 shadow-sm"
-                            src="https://picsum.photos/600/400" />
-                        <div
-                            class="friendlist_online_indicator absolute top-0 right-0 h-4 w-4 my-1 border-2 border-white rounded-full bg-green-700 z-2">
+                <div id="friendlist_container">
+                    <div onclick="select_friend({id})"
+                        class="friend-item flex hover:bg-gray-300 items-center hover:cursor-pointer  rounded-md  items-center flex-row">
+                        <div class="user-photo-round-small relative w-16 h-16 mr-4">
+                            <img class="rounded-full border w-16 h-16 border-gray-100 shadow-sm"
+                                src="https://picsum.photos/600/400" />
+                            <div
+                                class="friendlist_online_indicator absolute top-0 right-0 h-4 w-4 my-1 border-2 border-white rounded-full bg-green-700 z-2">
+                            </div>
                         </div>
-                    </div>
-                    <div class="user-name-last-message flex flex-col">
-                        <p class="username font-bold text-lg">
-                            Orion Electron
-                        </p>
+                        <div class="user-name-last-message flex flex-col">
+                            <p class="username font-bold text-lg">
+                                Orion Electron
+                            </p>
 
-                    </div>
-
-                </div>
-                <div onclick="select_friend({id})"
-                    class="friend-item flex hover:bg-gray-300 items-center hover:cursor-pointer  rounded-md  items-center flex-row">
-                    <div class="user-photo-round-small relative w-16 h-16 mr-4">
-                        <img class="rounded-full border w-16 h-16 border-gray-100 shadow-sm"
-                            src="https://picsum.photos/600/400" />
-                        <div
-                            class="friendlist_online_indicator absolute top-0 right-0 h-4 w-4 my-1 border-2 border-white rounded-full bg-green-700 z-2">
                         </div>
-                    </div>
-                    <div class="user-name-last-message flex flex-col">
-                        <p class="username font-bold text-lg">
-                            Pawan Kandel
-                        </p>
 
                     </div>
-
                 </div>
+
+
+
             </div>
         </div>
 
 
     </main>
-    <script type="text/javascript" src="./assets/js/news_feed.js">
+    <script type="text/javascript" src="./assets/js/temp.js">
 
     </script>
 </body>
