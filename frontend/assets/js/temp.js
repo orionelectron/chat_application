@@ -15,7 +15,7 @@ let newsfeed_container = document.getElementById("newsfeed_container");
 let friendlist_container = document.getElementById('friendlist_container')
 const user_id = document.getElementById('user_id').value || 123;
 const token = document.getElementById('token').value || '1234';
-
+let live_search_bar_timeout = null;
 let post_attachment_list = [];
 let live_search_list = [];
 let friend_request_list = [];
@@ -35,7 +35,12 @@ let top_places_list = [
 ];
 
 
-
+function clear_post_input() {
+    post_content_input.value = "";
+}
+function clear_search_bar_input() {
+    live_search_bar.value = "";
+}
 function timeAgo(timestamp) {
     const now = new Date();
     const posted = Date.parse(timestamp);
@@ -57,13 +62,72 @@ function timeAgo(timestamp) {
     }
 }
 
+function register_live_search_listener() {
+    live_search_bar.addEventListener("input", (event) => {
+
+        clearTimeout(live_search_bar_timeout);
+        live_search_bar_timeout = setTimeout(() => {
+
+            let username = event.target.value.toLowerCase();
+            fetch_users(username);
+
+
+        }, 1000)
+
+
+    })
+}
+function register_file_chooser_listener() {
+    post_file_chooser.addEventListener('change', (event) => {
+        const files = Array.from(event.target.files);
+        /*
+        let file_names = files.map((file) => {
+            const stripped_filename = file.name.split('.').slice(0, -1).join('.');;
+            const prefix = [user_id, current_friend.id].sort().join('-');
+            return prefix + stripped_filename;
+        })
+        */
+
+
+        const promises = files.map((file) => {
+            //let stripped_filename = file.name.split('.').slice(0, -1).join('.');
+            const prefix = user_id;
+            let stripped_filename = prefix + file.name;
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = () => {
+                    const fileData = reader.result.split(',')[1];
+                    resolve({ file_name: stripped_filename, file_type: file.type, file_data: fileData });
+                };
+
+                reader.readAsDataURL(file);
+            });
+        });
+
+        Promise.all(promises).then((files) => {
+            //socket.emit('sendFiles', { files });
+            files.forEach((file) => {
+                post_attachment_list.push(file);
+            });
+
+            console.log("Attachment list items ", post_attachment_list);
+            render_attachment_view();
+        });
+
+    });
+}
+
 function bootstrap() {
     fetch_newsfeed();
     fetch_friend_requests();
     fetch_friend_list();
     fetch_notifications();
     fetch_top_places();
+    register_live_search_listener();
+    register_file_chooser_listener();
 }
+
 function fetch_newsfeed() {
     let newsfeed_url = 'https://192.168.1.187:3000/newsfeed_data';
     let params = {
@@ -73,8 +137,21 @@ function fetch_newsfeed() {
     }
     console.log("fetching newsfeed");
 
-    let newsfeed_data = fetch_with_get(newsfeed_url, params, newsfeed_list, render_newsfeed);
-    console.log("Fetched newsfeed data ", newsfeed_data);
+    fetch_with_get(newsfeed_url, params, newsfeed_list, render_newsfeed);
+
+}
+function fetch_users(param) {
+    let users_url = 'https://192.168.1.187:3000/users/search';
+    let params = {
+        'search': param,
+        'page': 1,
+        'limit': 10
+
+    }
+
+    fetch_with_get(users_url, params, live_search_list, render_live_search_results)
+    display_live_search_container()
+    clear_search_bar_input()
 }
 function fetch_friend_list() {
     console.log("fetching friend list");
@@ -114,7 +191,7 @@ function fetch_top_places() {
 function fetch_live_search() {
     console.log("fetching live search data")
 }
-function fetch_with_get(url, params, target = null, callback = null) {
+function fetch_with_get(url, params, target = null, callback = null, cb_params = null) {
 
     axios.get(url, {
         params: {
@@ -132,8 +209,14 @@ function fetch_with_get(url, params, target = null, callback = null) {
         }
 
 
-        if (callback != null)
-            callback();
+        if (callback != null) {
+            if (cb_params != null) {
+                callback(cb_params)
+            }
+            else {
+                callback()
+            }
+        }
 
     })
         .catch((error) => {
@@ -221,12 +304,61 @@ function render_top_places() {
     }
     top_places_container.innerHTML = final_html;
 }
+let current_comments = [];
+function display_comments(comments_container) {
+    let final_html = "";
+    let template = `
+    <div class="flex items-center mx-2 text-white bg-gray-700 rounded-full space-x-4">
+    <div class="flex-shrink-0 ml-2 p-2">
+      <img class="h-10 w-10 rounded-full" src="{profile_picture_path}" alt="Profile picture">
+    </div>
+    <div class="flex-grow ">
+      <h1 class="font-bold"> {username} </h1>
+      <p class="text-white">{content}</p>
+      <div>
+        <span class="text-sky-200 hover:cursor-pointer mr-3  "> like </span>
+        <span class="text-sky-200 hover:cursor-pointer  "> reply </span>
+      </div>
+    </div>
+  </div>
+    `;
+    for (let i = 0; i < current_comments.length; i++) {
+        let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+            // console.log(newsfeed_list[i])
+
+            
+            return current_comments[i][key] || ""
+
+
+        });
+        final_html = final_html + final_template;
+    }
+
+    comments_container.innerHTML = final_html;
+}
+function render_comments(comments_container_id, post_id, user_id) {
+    current_comments =[]
+    let comments_container = document.getElementById(comments_container_id);
+    comments_container.innerHTML =""
+    if (comments_container.classList.contains('hidden'))
+        comments_container.classList.remove('hidden');
+    else
+        comments_container.classList.add('hidden')
+    let comment_url = 'https://192.168.1.187:3000/posts/comment';
+    let params = {
+        post_id
+    }
+    fetch_with_get(comment_url, params, current_comments, display_comments, comments_container)
+    console.log('tried to fetch comments')
+}
+
+
 
 function render_newsfeed() {
     final_html = '';
     let template = `
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-    <div class="p-4">
+    <div id="{post_id}" class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="p-4 flex flex-col gap-3">
         <div class="flex space-x-4">
             <div class="flex-shrink-0">
             <img class="h-12 w-12 rounded-full object-cover" src="{profile_picture_path}"></img>
@@ -244,7 +376,7 @@ function render_newsfeed() {
         <div class="my-2">
             <p class="text-gray-800 font-medium">{post_content}</p>
         </div>
-        <div class="my-4 w-full h-80 grid grid-cols-2 gap-4">
+        <div class="my-4 w-full h-80  grid-cols-2 gap-4">
            {photo_grid}
         </div>
         
@@ -269,15 +401,39 @@ function render_newsfeed() {
             </div>
         </div>
         <div class="flex justify-between">
-            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
+            <button onclick="like_post({post_id})" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
                 Like
             </button>
-            <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full">
+            <button onclick="render_comments('{post_id}_comments',{post_id}, {user_id})" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full">
                 Comment
             </button>
             <button class="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-full">
                 Share
             </button>
+        </div>
+        <div class="flex gap-2 justify-between">
+            <input class="basis-5/6 border-2" id="{post_id}_comment_input" type="text" placeholder="comment"/>
+            <button onclick="comment_post('{post_id}_comment_input', {post_id}, {user_id})" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full">
+                Comment
+            </button>
+        </div>
+        <div id="{post_id}_comments" class="hidden flex max-h-80 overflow-auto bg-gray-500  flex-col gap-2">
+        <div class="flex items-center mx-2 text-white bg-gray-700 rounded-full space-x-4">
+        <div class="flex-shrink-0 ml-2 p-2">
+            <img class="h-10 w-10 rounded-full" src="https://picsum.photos/200/300"
+                alt="Profile picture">
+        </div>
+        <div class="flex-grow ">
+        <h1 class="font-bold"> Orion electron </h1>
+            <p class="text-white">hello this is a dummy comment</p>
+            <div>
+            <span class="text-sky-200 hover:cursor-pointer mr-3  "> like </span>
+            <span class="text-sky-200 hover:cursor-pointer  "> reply </span>
+        </div>
+        </div>
+        
+        
+    </div>
         </div>
     </div>
 </div>
@@ -288,6 +444,9 @@ function render_newsfeed() {
 
             if (key == 'photo_grid')
                 return get_photo_grid(newsfeed_list[i].post_photo_urls);
+            else if (key == 'created_at') {
+                return timeAgo(newsfeed_list[i].created_at)
+            }
             else
                 return newsfeed_list[i][key]
 
@@ -297,7 +456,69 @@ function render_newsfeed() {
     }
     newsfeed_container.innerHTML = final_html;
 }
+function toggle_live_search_container() {
+    if (live_search_container.classList.contains('hidden')) {
+        display_live_search_container();
+    }
+    else {
+        close_live_search_container();
+    }
+}
+function display_live_search_container() {
+    live_search_container.classList.remove('hidden');
+    render_live_search_results();
+}
+function close_live_search_container() {
+    live_search_container.classList.add('hidden');
+}
+function render_live_search_results() {
+    live_search_content_container.innerHTML = "";
+    let final_html = "";
+    template = `
+    <div onclick=""
+                    class="friend-item flex p-1 bg-violet-100 items-center hover:cursor-pointer  rounded-md  items-center justify-between flex-row">
+                    <div class="user-photo-round-small relative w-16 h-16 mr-4">
+                        <img class="rounded-full border w-16 h-16 border-gray-100 shadow-sm"
+                            src="{photo_path}" />
+                        <div
+                            class="friendlist_online_indicator absolute top-0 right-0 h-4 w-4 my-1 border-2 border-white rounded-full {isOnline} z-2">
+                        </div>
+                    </div>
+                    <div class="user-name-last-message flex flex-col">
+                        <p class="username font-bold text-lg">
+                            {username}
+                        </p>
+                        <p class="gender font-bold text-md">
+                            {gender}
+                        </p>
 
+                    </div>
+                    <div>
+                        <button onclick="send_friend_request({id})"class="bg-blue-600 hover:bg-blue-800 p-2 text-white rounded-md"> Send Request  </button>
+                    </div>
+
+                </div>
+    `;
+    live_search_list.forEach((live_search_item) => {
+        let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+            if (key === "isOnline") {
+                return "bg-green-600";
+            }
+            else if (key == "photo_path") {
+                return "https://picsum.photos/600/400";
+            }
+            else {
+                return live_search_item[key] || "";
+            }
+
+
+        });
+        //console.log("template", friend_template);
+        final_html = final_html + final_template;
+    });
+    live_search_content_container.innerHTML = final_html;
+}
 function render_friend_requests() {
     let final_html = "";
     let template = `
@@ -374,7 +595,7 @@ function render_friend_list() {
             if (key === "time_ago") {
                 return timeAgo(friend.timestamp);
             }
-           
+
             else {
                 return friend[key] || "";
             }
@@ -444,34 +665,253 @@ function render_notifications() {
     notification_content_container.innerHTML = final_html;
 }
 
-function render_live_search_results() {
-    fetch_live_search();
+function toggle_message_container() {
+    if (message_container.classList.contains("hidden")) {
+        display_message_container();
+        render_messages();
+    }
+    else {
+        close_message_container();
+    }
+}
+function display_message_container() {
+    message_container.classList.remove("hidden")
+}
+function close_message_container() {
+    message_container.classList.add("hidden")
+}
+function render_messages() {
+    let final_html = "";
+    template = `
+    <a href="#" class="bg-gradient-to-r from-violet-300 via-pink-300 flex items-center   py-3 hover:bg-gray-200">
+                                <div onclick="select_friend({id})"
+                                    class="message-item w-full h-full flex hover:bg-gray-300 items-center hover:cursor-pointer  rounded-md  items-center flex-row">
+                                    <div class="user-photo-round-small relative w-16 h-16 mr-4">
+                                        <img class="rounded-full border w-16 h-16 border-gray-100 shadow-sm"
+                                            src="https://source.unsplash.com/random" />
+                                        <div
+                                            class="friendlist_online_indicator absolute top-0 right-0 h-4 w-4 my-1 border-2 border-white rounded-full bg-green-700 z-2">
+                                        </div>
+                                    </div>
+                                    <div class="user-name-last-message flex flex-col">
+                                        <p class="username font-bold text-lg">
+                                            {username}
+                                        </p>
+                                        <p class="last-message text-sky-600 font-medium">
+                                            {last_message} <span class="text-gray-900"> {time_ago} </span>
+                                        </p>
+                                    </div>
+                                    <div class="w-4 h-4 unseen_round_indicator rounded-full ml-auto bg-blue-600"> </div>
+                                </div>
+
+                            </a>
+    `;
+    for (let i = 0; i < messages_list.length; i++) {
+        let message = messages_list[i];
+
+        let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+
+            if (key === "time_ago") {
+                return timeAgo(message.timestamp);
+            }
+            else {
+                return message[key] || "";
+            }
+
+
+        });
+        //console.log("template", friend_template);
+        final_html = final_html + final_template;
+    }
+    message_content_container.innerHTML = final_html;
+}
+function remove_from_attachment_list(input_file_name) {
+    console.log("input file name for removal ", input_file_name);
+    post_attachment_list = post_attachment_list.filter((post_attachment_item) => {
+        console.log("post_attachment_item ", post_attachment_item.file_name, input_file_name);
+        if (input_file_name == post_attachment_item.file_name)
+            return false;
+        return true;
+    });
+    console.log("filtered attachment list items ", post_attachment_list);
+    clear_attachment_view();
+    render_attachment_view();
+
+}
+function open_post_attachment_view() {
+    console.log("opended_attachment_view")
+    //document.getElementById("attachment_view").classList.add('hidden');
+    attachment_view.classList.remove('hidden');
+    post_file_chooser.click();
+}
+function close_post_attachment_view() {
+    console.log("closed_attachment_view")
+    document.getElementById("attachment_view").classList.add('hidden');
+    attachment_view.classList.add('hidden');
+}
+function clear_attachment_view() {
+    attachment_view.innerHTML = "";
+    if (post_attachment_list.length == 0) {
+        close_post_attachment_view()
+    }
+
+}
+function render_attachment_view() {
+    console.log("rendering attachment_view")
+    //clear_attachment_view();
+    let final_html = '';
+    let file_template = `<div
+    class=" attachment-view-item relative p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
+    <i class="fa-solid fa-file fa-xl hover:cursor-pointer" style="color: #025cf7;"></i>
+    <p class="font-semibold"> {filename}</p>
+    <div onclick='remove_from_attachment_list("{filename}")' class=" attachment_view_item absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
+    </div>
+</div>`;
+    let photo_template = `<div
+class="attachment-view-item relative  p-2 w-20 inline-block h-full bg-gray-400 rounded-sm text-clip overflow-hidden ...">
+
+<div class="font-semibold"> <img src="{photo}"> </img></div>
+<div onclick='remove_from_attachment_list("{filename}")' class="attachment_view_item absolute top-0 right-0 h-6 w-6  border-2 border-white rounded-full bg-red-400 z-2">
+</div>
+</div>`;
+
+    post_attachment_list.forEach(({ file_name, file_type, file_data }) => {
+        if (file_type.startsWith('image/')) {
+
+            let img_src = `data:${file_type};base64,${file_data}`;
+            let final_template = photo_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "photo") {
+                    return img_src;
+                }
+                else if (key === "filename") {
+                    return file_name;
+                }
+
+
+
+            });
+            final_html = final_html + final_template;
+
+
+        }
+        else {
+            let final_template = file_template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
+
+                if (key === "filename") {
+                    return file_name;
+                }
+            });
+            final_html = final_html + final_template;
+
+
+        }
+    });
+    //let attachment_view = document.getElementById("attachment_view")
+    attachment_view.innerHTML = final_html;
+
 }
 
+function get_friend_request(friend_request_id) {
+
+    for (let i = 0; i < friend_request_list.length; i++) {
+        if (friend_request_list[i].friend_request_id == friend_request_id) {
+
+            return friend_request_list[i];
+        }
+    }
 
 
-function accept_friend_request() {
-    render_friend_requests();
 }
-function reject_friend_request() {
-    render_friend_requests();
-}
+function get_post(post_id) {
+    console.log(post_id)
+    for (let i = 0; i < newsfeed_list.length; i++) {
+        if (newsfeed_list[i].post_id == post_id) {
 
+            return newsfeed_list[i];
+        }
+    }
+}
+function accept_friend_request(friend_request_id) {
+    let accept_request_url = 'https://192.168.1.187:3000/friend_requests/accept';
+    console.log("Accepted friend request", friend_request_id);
+    let friend_request = get_friend_request(friend_request_id);
+    //console.log(friend_request)
+    let params = {
+        from_user: friend_request.to_user_id,
+        to_user: friend_request.from_user_id,
+        friend_request_id
+
+    }
+    fetch_with_get(accept_request_url, params, null, fetch_friend_requests);
+}
+function reject_friend_request(friend_request_id) {
+    let accept_request_url = 'https://192.168.1.187:3000/friend_requests/reject';
+    console.log("Rejected friend request", friend_request_id);
+    let friend_request = get_friend_request(friend_request_id);
+    //console.log(friend_request)
+    let params = {
+        from_user: friend_request.to_user_id,
+        to_user: friend_request.from_user_id,
+        friend_request_id
+
+    }
+    fetch_with_get(accept_request_url, params, null, fetch_friend_requests)
+}
+function send_friend_request(id) {
+    let friend_request_url = 'https://192.168.1.187:3000/friend_requests';
+    let body = {
+        to_user_id: id,
+        from_user_id: user_id
+    }
+
+    console.log("sent friend request to ", id)
+    send_with_post(friend_request_url, body, null, () => { alert("friend request sent") })
+}
 function like_post(post_id) {
-
+    let post = get_post(post_id);
+    console.log("fetched post", post)
+    let like_post_url = 'https://192.168.1.187:3000/posts/like';
+    let body = {
+        from_user: user_id,
+        to_user: post.user_id,
+        post_id
+    }
+    console.log("liked the post");
+    send_with_post(like_post_url, body, null, null);
 }
 
 function share_post(post_id) {
 
 }
 
-function comment_post(post_id) {
-
+function comment_post(comment_input, post_id, id) {
+    let comment_url = 'https://192.168.1.187:3000/posts/comment';
+    let comment_input_element = document.getElementById(comment_input);
+    let comment = comment_input_element.value;
+    let body = {
+        comment,
+        post_id,
+        user_id: user_id
+    }
+    send_with_post(comment_url, body, null, null);
+    document.getElementById(comment_input).value = "";
+    console.log('commented_on_post');
 }
 
 function create_post() {
-    send_with_post();
-    render_newsfeed();
+    let create_post_url = 'https://192.168.1.187:3000/posts';
+    post_content_input = document.getElementById("post_content_input")
+    let data = {
+        user_id,
+        content: post_content_input.value || "",
+        files: post_attachment_list,
+        type: "post",
+
+    }
+
+    send_with_post(create_post_url, data, null, null);
 
 }
 

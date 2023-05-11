@@ -122,7 +122,8 @@ CREATE TABLE parent_child_comment (
   parent_comment_id INT NOT NULL,
   child_comment_id INT NOT NULL,
   FOREIGN KEY (parent_comment_id) REFERENCES comments(id),
-  FOREIGN KEY (child_comment_id) REFERENCES comments(id)
+  FOREIGN KEY (child_comment_id) REFERENCES comments(id),
+  UNIQUE key(parent_comment_id, child_comment_id)
 );
 
 CREATE TABLE polls (

@@ -282,6 +282,87 @@ app.post('/posts', async (req, res) => {
 
 
 });
+app.post('/posts/like', async (req, res) => {
+    let { post_id, from_user, to_user } = req.body;
+    from_user = parseInt(from_user);
+    console.log("like", req.body);
+
+    let transactions = [
+        {
+            id: "check_like",
+            query: "SELECT * FROM likes WHERE user_id = ? AND post_id = ?",
+            parameters: [from_user, post_id]
+        }
+    ];
+
+    let result = await executeTransactions(transactions);
+
+    if (result.check_like.result[0]) {
+        console.log(result.check_like.result[0].post_id, "res");
+
+        let transactions = [
+            {
+                id: "dislike",
+                query: "DELETE FROM likes WHERE user_id = ? AND post_id = ?",
+                parameters: [from_user, post_id]
+            }
+        ];
+
+        let primary = await executeTransactions(transactions);
+        res.json({ post: 'disliked' });
+    } else {
+        let transactions = [
+            {
+                id: "like",
+                query: "INSERT INTO likes(user_id, post_id) VALUES (?, ?)",
+                parameters: [from_user, post_id]
+            },
+            {
+                id: "notification",
+                query: "INSERT INTO notifications(from_user, to_user, message, type, status, notification_source) VALUES (?, ?, ?, ?, ?, ?)",
+                parameters: [from_user, to_user, "Liked your post", "like", "unread", "post_id"]
+            }
+        ];
+
+        let result = await executeTransactions(transactions);
+        res.json({ post: "liked" });
+    }
+
+
+
+
+});
+app.get('/posts/comment', async(req,res) => {
+    const {post_id} = req.query;
+    console.log("comments", post_id)
+    let transactions = [
+        {
+            id: 'comments',
+            query: "SELECT * FROM users left join comments on  comments.user_id = users.id WHERE comments.post_id = ?",
+            parameters: [post_id]
+        }
+    ]
+    let results = await executeTransactions(transactions);
+    console.log(results.comments.result);
+    res.json(results.comments.result)
+
+})
+app.post('/posts/comment',async  (req, res)=> {
+    const {post_id, user_id, comment} = req.body;
+    console.log(req.body)
+    let transactions = [
+        {
+            id: "comment",
+            query: "INSERT INTO comments(user_id, post_id, content) VALUES (?,?,?);",
+            parameters: [user_id, post_id, comment]
+        },
+        
+    ]
+    let results = await executeTransactions(transactions);
+    //console.log(results);
+    res.json({result: 'comment posted'})
+    
+})
 
 app.get('/friends', (req, res) => {
     // Get the current user's username from the session
@@ -291,7 +372,7 @@ app.get('/friends', (req, res) => {
 
     // TODO: Query the database to get the list of friends for the current user
     // For example, assuming you have a User model in Mongoose:
-    const {id }= req.query
+    const { id } = req.query
     console.log("user id", id)
     const sql = 'select * from friends INNER JOIN users on friends.friend_id = users.id where friends.friend_id  = ?';
     pool.query(sql, [id], (err, result) => {
@@ -327,7 +408,7 @@ app.get("/newsfeed_data", async (req, res) => {
         u.id AS user_id,
         u.profile_picture_path AS profile_picture_path,
         COUNT(DISTINCT l.post_id) AS likes_count,
-        COUNT(DISTINCT c.post_id) AS comment_count,
+        COUNT(c.post_id) AS comment_count,
         GROUP_CONCAT(DISTINCT ph.post_photo_url) AS post_photo_urls,
         p.content AS post_content
       FROM
@@ -499,13 +580,8 @@ app.post('/friend_requests', async (req, res) => {
     }
 })
 
-app.post('/posts/like', (req, res) => {
 
-});
 
-app.post('/posts/comment', (req, res) => {
-
-})
 
 
 

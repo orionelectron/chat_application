@@ -705,7 +705,7 @@ function get_photo_grid(post_photo_urls) {
 function render_newsfeed_container() {
     final_html = '';
     let template = `
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div id="{post_id}" class="bg-white rounded-lg shadow-lg overflow-hidden">
     <div class="p-4">
         <div class="flex space-x-4">
             <div class="flex-shrink-0">
@@ -757,6 +757,12 @@ function render_newsfeed_container() {
             </button>
             <button class="bg-violet-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-full">
                 Share
+            </button>
+        </div>
+        <div class="flex justify-between">
+            <input id="{post_id}_comment" type="text" placeholder="comment"/>
+            <button onclick="comment_post('{post_id}_comment', {post_id}, {user_id})" class="bg-green-500 hover:bg-violet-700 text-white font-bold py-2 px-4 rounded-full">
+                Comment
             </button>
         </div>
     </div>
