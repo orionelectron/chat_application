@@ -93,6 +93,7 @@ function register_file_chooser_listener() {
             //let stripped_filename = file.name.split('.').slice(0, -1).join('.');
             const prefix = user_id;
             let stripped_filename = prefix + file.name;
+            console.log(stripped_filename)
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
 
@@ -256,7 +257,7 @@ function get_photo_grid(post_photo_urls) {
     console.log(post_photo_urls)
     let photo_urls = post_photo_urls.split(',').map(url => url.trim());
     let final_html = '';
-    let template = `<img class="w-full h-full object-cover" src="{post_photo_url}.png">`
+    let template = `<img class="w-full h-full object-cover" src="{post_photo_url}">`
     for (let i = 0; i < photo_urls.length; i++) {
         let final_template = template.replace(/{([^{}]+)}/g, function (keyExpr, key) {
 
@@ -376,7 +377,7 @@ function render_newsfeed() {
         <div class="my-2">
             <p class="text-gray-800 font-medium">{post_content}</p>
         </div>
-        <div class="my-4 w-full h-80  grid-cols-2 gap-4">
+        <div class="my-4 w-full min-h-80  grid-cols-2 gap-4">
            {photo_grid}
         </div>
         

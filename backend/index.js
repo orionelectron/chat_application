@@ -211,6 +211,7 @@ function save_post_files(data) {
 
         // Get the file extension from the original filename
         const fileExtension = path.extname(file.file_name);
+        console.log(fileExtension);
 
         // Set the full file path
         const filePath = path.join(uploadDir, `${filenamePrefix}${fileExtension}`);
@@ -221,7 +222,7 @@ function save_post_files(data) {
                 console.error(err);
             } else {
                 console.log(`File saved as ${filePath}`);
-                renamed_files.push('https://192.168.1.187:3000/photos/' + filenamePrefix);
+                renamed_files.push('https://192.168.1.187:3000/photos/' + filenamePrefix + fileExtension);
             }
         });
     });
